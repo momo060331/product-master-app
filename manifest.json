@@ -1,0 +1,24 @@
+{
+  "name": "商品マスター登録",
+  "short_name": "商品マスター",
+  "description": "在庫管理アプリ連携 - 商品情報の事前登録",
+  "start_url": "./product-master.html",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#2C7A4D",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

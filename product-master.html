@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品マスター登録</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2C7A4D;
+            --primary-light: #4CAF6F;
+            --primary-dark: #1E5A3A;
+            --secondary: #FF9F4A;
+            --danger: #E74C3C;
+            --success: #27AE60;
+            --bg-main: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-primary: #2C3E50;
+            --text-secondary: #7F8C8D;
+            --border: #E0E0E0;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E8EAF0 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+            font-weight: 300;
+        }
+
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .sync-status.synced {
+            background: rgba(39, 174, 96, 0.3);
+        }
+
+        .sync-status.syncing {
+            background: rgba(255, 159, 74, 0.3);
+        }
+
+        .sync-status.error {
+            background: rgba(231, 76, 60, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .stats-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: var(--bg-main);
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .search-box {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: 25px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 122, 77, 0.1);
+        }
+
+        .product-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .product-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .product-jan {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .product-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .fab-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99;
+        }
+
+        .fab {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #FF8A1F 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(255, 159, 74, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 28px;
+            color: white;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 30px rgba(255, 159, 74, 0.6);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        .fab-menu.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .fab-menu-item {
+            background: var(--bg-card);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .fab-menu-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 2000;
+            animation: slideDown 0.3s ease;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .camera-view {
+            width: 100%;
+            max-width: 500px;
+            min-height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .camera-view video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #cameraView > div {
+            width: 100% !important;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 80%;
+            height: 2px;
+            background: var(--secondary);
+            animation: scan 2s ease-in-out infinite;
+            box-shadow: 0 0 10px var(--secondary);
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 20%; }
+            50% { top: 80%; }
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(44, 122, 77, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 122, 77, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .batch-item {
+            background: var(--bg-main);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .batch-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .batch-item-jan {
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 122, 77, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            cursor: pointer;
+            background: white;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 122, 77, 0.1);
+        }
+
+        .form-label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📦 商品マスター登録</h1>
+        <div class="header-subtitle">在庫管理アプリ連携 - 商品情報の事前登録</div>
+        <div id="syncStatus" class="sync-status">⏳ 読込中...</div>
+    </div>
+
+    <div class="container">
+        <!-- 統計カード -->
+        <div class="stats-card">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalProducts">0</div>
+                    <div class="stat-label">登録商品数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="withJAN">0</div>
+                    <div class="stat-label">JANコード登録済み</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCategories">0</div>
+                    <div class="stat-label">カテゴリー数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 検索ボックス -->
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 JANコード、商品名、カテゴリーで検索...">
+        </div>
+
+        <!-- 商品リスト -->
+        <div class="product-list" id="productList">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <div class="empty-state-text">まだ商品が登録されていません</div>
+                <div style="margin-top: 10px; color: var(--text-secondary); font-size: 14px;">
+                    右下の + ボタンから商品を追加しましょう
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FABメニュー -->
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-menu-item" onclick="openNormalScan()">
+                <span>📷</span> スキャン登録
+            </div>
+            <div class="fab-menu-item" onclick="openBatchScan()">
+                <span>⚡</span> 連続スキャン
+            </div>
+            <div class="fab-menu-item" onclick="openManualRegister()">
+                <span>✍️</span> 手動登録
+            </div>
+            <div class="fab-menu-item" onclick="openSettings()">
+                <span>⚙️</span> 設定
+            </div>
+        </div>
+        <button class="fab" id="fabBtn" onclick="toggleFabMenu()">+</button>
+    </div>
+
+    <!-- スキャンモーダル -->
+    <div class="modal" id="scanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="scanModalTitle">📷 バーコードスキャン</h2>
+                <button class="close-btn" onclick="closeScanModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="camera-view" id="cameraView">
+                    <div class="scan-line"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; color: var(--text-secondary); font-size: 14px;">
+                    バーコードをカメラに映してください
+                </div>
+                <div id="scanInfo" style="margin-top: 15px; padding: 12px; background: var(--bg-main); border-radius: 8px; display: none;">
+                    <!-- スキャン情報がここに表示されます -->
+                </div>
+                <button class="btn btn-secondary" onclick="closeScanModal()" style="width: 100%; margin-top: 15px;">
+                    キャンセル
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 連続スキャン - 編集画面モーダル -->
+    <div class="modal" id="batchEditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚡ 連続スキャン - 編集</h2>
+                <button class="close-btn" onclick="closeBatchEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #E8F5E9; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                    <strong>スキャン完了:</strong> <span id="batchCount">0</span>件
+                </div>
+                <div id="batchEditList">
+                    <!-- スキャンした商品リストがここに表示されます -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeBatchEditModal()" style="flex: 1;">
+                        キャンセル
+                    </button>
+                    <button class="btn btn-primary" onclick="saveBatchProducts()" style="flex: 2;">
+                        一括保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 手動登録・編集モーダル -->
+    <div class="modal" id="productFormModal">
+        <div class="modal-content">
+            <div class="modal-header" id="formModalHeader">
+                <h2 id="formModalTitle">✍️ 商品登録</h2>
+                <button class="close-btn" onclick="closeProductFormModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <label class="form-label">JANコード（任意）</label>
+                    <input type="text" class="form-input" id="formJanCode" placeholder="JANコードを入力">
+                    
+                    <label class="form-label">商品名（必須）</label>
+                    <input type="text" class="form-input" id="formProductName" placeholder="商品名を入力" required>
+                    
+                    <label class="form-label">大カテゴリ（必須）</label>
+                    <select class="form-select" id="formLargeCategory" required onchange="updateFormMediumOptions()">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">中カテゴリ（任意）</label>
+                    <select class="form-select" id="formMediumCategory" onchange="updateFormSmallOptions()">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">小カテゴリ（任意）</label>
+                    <select class="form-select" id="formSmallCategory">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">保管場所（任意）</label>
+                    <select class="form-select" id="formLocation">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">基準価格（任意）</label>
+                    <input type="number" class="form-input" id="formBasePrice" placeholder="円">
+                    
+                    <label class="form-label">メモ（任意）</label>
+                    <textarea class="form-input" id="formMemo" placeholder="メモを入力" style="min-height: 80px; resize: vertical;"></textarea>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeProductFormModal()" style="flex: 1;">
+                            キャンセル
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;">
+                            保存
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="deleteButtonContainer" style="display: none; margin-top: 15px;">
+                    <button class="btn" onclick="deleteProduct()" style="width: 100%; background: var(--danger); color: white;">
+                        🗑️ この商品を削除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 設定</h2>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #E8F5E9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4CAF50;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">📡 Firebase同期</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">
+                        商品マスターは在庫管理アプリとリアルタイム同期されます<br>
+                        <strong>ユーザーID:</strong> <code id="userIdDisplay" style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px;"></code>
+                    </div>
+                </div>
+                
+                <h3 style="margin-bottom: 15px;">📤 エクスポート</h3>
+                <button class="btn btn-secondary" onclick="exportProductMasterCSV()" style="width: 100%; margin-bottom: 10px;">
+                    📊 商品マスターCSV
+                </button>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 30px;">
+                    登録した商品情報をCSVファイルでダウンロード
+                </p>
+
+                <h3 style="margin-bottom: 15px;">📥 インポート</h3>
+                <button class="btn btn-secondary" onclick="importProductMasterCSV()" style="width: 100%; margin-bottom: 10px;">
+                    📂 商品マスターCSV
+                </button>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 30px;">
+                    CSVファイルから商品情報を読み込み（既存商品は上書き）
+                </p>
+
+                <h3 style="margin-bottom: 15px;">🗑️ データ管理</h3>
+                <button class="btn" onclick="clearAllProducts()" style="width: 100%; background: var(--danger); color: white;">
+                    すべての商品を削除
+                </button>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+                    ※この操作は取り消せません
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 非表示のファイル入力 -->
+    <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- バーコードスキャナー -->
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <script>
+        // ========================================
+        // Firebase 初期化（在庫管理アプリと同じ設定）
+        // ========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCy0q1fEX4Utch_NiLvxdh96fQIWaXFs-A",
+            authDomain: "home-inventory-6f9b0.firebaseapp.com",
+            projectId: "home-inventory-6f9b0",
+            storageBucket: "home-inventory-6f9b0.firebasestorage.app",
+            messagingSenderId: "547759174138",
+            appId: "1:547759174138:web:95ac043ca6bc6937d73443"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // オフライン対応
+        db.enablePersistence()
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn('⚠️ 複数タブが開いています');
+                } else if (err.code == 'unimplemented') {
+                    console.warn('⚠️ このブラウザはオフライン機能に対応していません');
+                }
+            });
+
+        // ========================================
+        // ユーザーID管理（在庫管理アプリと同じIDを使用）
+        // ========================================
+        let userId = localStorage.getItem('inventoryUserId');
+        if (!userId) {
+            userId = 'USER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('inventoryUserId', userId);
+            console.log('🆕 新しいユーザーIDを作成:', userId);
+        } else {
+            console.log('✅ 既存のユーザーIDを使用:', userId);
+        }
+
+        // ========================================
+        // グローバル変数
+        // ========================================
+        let productMaster = [];  // 商品マスターデータ
+        let categories = {
+            large: ['食品', '日用品', '医薬品'],
+            medium: {
+                '食品': ['調味料', 'パウチ', '備蓄', '飲料'],
+                '日用品': ['掃除用品', 'トイレ用品', 'キッチン用品'],
+                '医薬品': ['内服薬', '外用薬', '救急用品']
+            },
+            small: {
+                '調味料': ['塩', '醤油', 'みりん', '酢', '油'],
+                'パウチ': ['カレー', 'シチュー', 'スープ'],
+                '備蓄': ['缶詰', 'レトルト', '乾物']
+            }
+        };
+        let locations = ['キッチン棚A', 'キッチン棚B', '冷蔵庫', 'パントリー', '洗面所下', 'リビング収納'];
+        
+        let scanner = null;  // スキャナーインスタンス
+        let scanMode = 'normal';  // 'normal' or 'batch'
+        let batchScannedItems = [];  // 連続スキャンしたアイテム
+        let currentEditingProductId = null;  // 編集中の商品ID
+
+        // ========================================
+        // 初期化
+        // ========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadData();
+            renderProductList();
+            updateStats();
+            setupSearch();
+            setupRealtimeListener();
+        });
+
+        // ========================================
+        // データ読み込み
+        // ========================================
+        async function loadData() {
+            try {
+                updateSyncStatus('loading');
+                
+                const docRef = db.collection('productMaster').doc(userId);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    productMaster = data.products || [];
+                    categories = data.categories || categories;
+                    locations = data.locations || locations;
+                    
+                    updateSyncStatus('synced');
+                    console.log('✅ 商品マスターを読み込みました:', productMaster.length, '件');
+                } else {
+                    console.log('📝 新規ユーザーです');
+                    
+                    // 在庫管理アプリのカテゴリーを読み込む
+                    const inventoryDoc = await db.collection('inventory').doc(userId).get();
+                    if (inventoryDoc.exists) {
+                        const inventoryData = inventoryDoc.data();
+                        categories = inventoryData.categories || categories;
+                        locations = inventoryData.locations || locations;
+                        console.log('✅ 在庫管理アプリからカテゴリーを同期しました');
+                    }
+                    
+                    updateSyncStatus('synced');
+                }
+            } catch (error) {
+                console.error('❌ データ読み込みエラー:', error);
+                updateSyncStatus('error');
+            }
+        }
+
+        // ========================================
+        // データ保存
+        // ========================================
+        async function saveData() {
+            const data = {
+                products: productMaster,
+                categories: categories,
+                locations: locations,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            try {
+                updateSyncStatus('syncing');
+                await db.collection('productMaster').doc(userId).set(data);
+                updateSyncStatus('synced');
+                console.log('✅ 商品マスターを保存しました');
+            } catch (error) {
+                console.error('❌ 保存エラー:', error);
+                updateSyncStatus('error');
+            }
+        }
+
+        // ========================================
+        // 商品リスト表示
+        // ========================================
+        function renderProductList() {
+            const list = document.getElementById('productList');
+            
+            if (productMaster.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <div class="empty-state-text">まだ商品が登録されていません</div>
+                        <div style="margin-top: 10px; color: var(--text-secondary); font-size: 14px;">
+                            右下の + ボタンから商品を追加しましょう
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = productMaster.map(product => `
+                <div class="product-card" onclick="editProduct('${product.id}')">
+                    <div class="product-header">
+                        <div style="flex: 1;">
+                            <div class="product-name">${product.productName || '商品名未設定'}</div>
+                            <div class="product-jan">JAN: ${product.janCode || '未設定'}</div>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        ${product.category ? `<div class="info-item">📁 ${getCategoryPath(product.category)}</div>` : ''}
+                        ${product.location ? `<div class="info-item">📍 ${product.location}</div>` : ''}
+                        ${product.basePrice ? `<div class="info-item">💰 ¥${product.basePrice}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========================================
+        // カテゴリーパス表示
+        // ========================================
+        function getCategoryPath(category) {
+            if (!category) return '未分類';
+            let path = category.large || '';
+            if (category.medium) path += ' > ' + category.medium;
+            if (category.small) path += ' > ' + category.small;
+            return path || '未分類';
+        }
+
+        // ========================================
+        // 統計更新
+        // ========================================
+        function updateStats() {
+            document.getElementById('totalProducts').textContent = productMaster.length;
+            document.getElementById('withJAN').textContent = productMaster.filter(p => p.janCode).length;
+            
+            const uniqueCategories = new Set();
+            productMaster.forEach(p => {
+                if (p.category?.large) uniqueCategories.add(p.category.large);
+            });
+            document.getElementById('totalCategories').textContent = uniqueCategories.size;
+        }
+
+        // ========================================
+        // 検索機能
+        // ========================================
+        function setupSearch() {
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                if (!term) {
+                    renderProductList();
+                    return;
+                }
+
+                const filtered = productMaster.filter(p => {
+                    return (p.janCode && p.janCode.includes(term)) ||
+                           (p.productName && p.productName.toLowerCase().includes(term)) ||
+                           (p.category && getCategoryPath(p.category).toLowerCase().includes(term));
+                });
+
+                const list = document.getElementById('productList');
+                if (filtered.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-text">商品が見つかりません</div>
+                        </div>
+                    `;
+                } else {
+                    list.innerHTML = filtered.map(product => `
+                        <div class="product-card" onclick="editProduct('${product.id}')">
+                            <div class="product-header">
+                                <div style="flex: 1;">
+                                    <div class="product-name">${product.productName || '商品名未設定'}</div>
+                                    <div class="product-jan">JAN: ${product.janCode || '未設定'}</div>
+                                </div>
+                            </div>
+                            <div class="product-info">
+                                ${product.category ? `<div class="info-item">📁 ${getCategoryPath(product.category)}</div>` : ''}
+                                ${product.location ? `<div class="info-item">📍 ${product.location}</div>` : ''}
+                                ${product.basePrice ? `<div class="info-item">💰 ¥${product.basePrice}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+
+        // ========================================
+        // リアルタイム同期
+        // ========================================
+        function setupRealtimeListener() {
+            db.collection('productMaster').doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists && !doc.metadata.hasPendingWrites) {
+                        const data = doc.data();
+                        const currentData = JSON.stringify(productMaster);
+                        const newData = JSON.stringify(data.products || []);
+                        
+                        if (currentData !== newData) {
+                            productMaster = data.products || [];
+                            categories = data.categories || categories;
+                            locations = data.locations || locations;
+                            
+                            renderProductList();
+                            updateStats();
+                            showNotification('🔄 他のデバイスから更新されました');
+                        }
+                    }
+                }, (error) => {
+                    console.error('❌ リアルタイム同期エラー:', error);
+                });
+        }
+
+        // ========================================
+        // UI制御
+        // ========================================
+        function toggleFabMenu() {
+            const menu = document.getElementById('fabMenu');
+            menu.classList.toggle('show');
+        }
+
+        function updateSyncStatus(status) {
+            const statusElement = document.getElementById('syncStatus');
+            const config = {
+                synced: { icon: '✅', text: '同期済み', class: 'synced' },
+                syncing: { icon: '🔄', text: '同期中...', class: 'syncing' },
+                loading: { icon: '⏳', text: '読込中...', class: 'syncing' },
+                error: { icon: '❌', text: 'オフライン', class: 'error' }
+            };
+            
+            const c = config[status] || config.synced;
+            statusElement.innerHTML = `${c.icon} ${c.text}`;
+            statusElement.className = 'sync-status ' + c.class;
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function editProduct(productId) {
+            alert('次のステップで編集機能を実装します\n商品ID: ' + productId);
+        }
+
+        // ドキュメント外クリックでメニューを閉じる
+        document.addEventListener('click', (e) => {
+            const fabMenu = document.getElementById('fabMenu');
+            const fabBtn = document.getElementById('fabBtn');
+            if (!fabBtn.contains(e.target) && !fabMenu.contains(e.target)) {
+                fabMenu.classList.remove('show');
+            }
+        });
+
+        // ========================================
+        // バーコードスキャン機能
+        // ========================================
+
+        // 通常スキャンを開始
+        async function openNormalScan() {
+            toggleFabMenu();
+            scanMode = 'normal';
+            document.getElementById('scanModalTitle').textContent = '📷 バーコードスキャン';
+            document.getElementById('scanModal').classList.add('show');
+            await startScanner();
+        }
+
+        // 連続スキャンを開始
+        async function openBatchScan() {
+            toggleFabMenu();
+            scanMode = 'batch';
+            batchScannedItems = [];
+            document.getElementById('scanModalTitle').textContent = '⚡ 連続スキャン';
+            document.getElementById('scanModal').classList.add('show');
+            await startScanner();
+        }
+
+        // スキャナーを起動
+        async function startScanner() {
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                if (devices && devices.length > 0) {
+                    // 背面カメラを優先
+                    let cameraId = devices[devices.length - 1].id;
+                    
+                    scanner = new Html5Qrcode("cameraView");
+                    await scanner.start(
+                        cameraId,
+                        { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        },
+                        onScanSuccess,
+                        () => {}  // エラーは無視
+                    );
+                    
+                    console.log('✅ スキャナー起動成功');
+                } else {
+                    alert('カメラが見つかりません');
+                    closeScanModal();
+                }
+            } catch (err) {
+                console.error('❌ カメラエラー:', err);
+                alert('カメラの起動に失敗しました\n' + err.message);
+                closeScanModal();
+            }
+        }
+
+        // スキャン成功時の処理
+        function onScanSuccess(decodedText) {
+            console.log('📷 スキャン成功:', decodedText);
+            
+            if (scanMode === 'normal') {
+                handleNormalScan(decodedText);
+            } else if (scanMode === 'batch') {
+                handleBatchScan(decodedText);
+            }
+        }
+
+        // 通常スキャン処理
+        function handleNormalScan(janCode) {
+            // 既存チェック
+            const existing = productMaster.find(p => p.janCode === janCode);
+            
+            if (existing) {
+                // 既に登録済み
+                document.getElementById('scanInfo').style.display = 'block';
+                document.getElementById('scanInfo').innerHTML = `
+                    <div style="color: var(--warning); margin-bottom: 10px;">
+                        ⚠️ このJANコードは既に登録されています
+                    </div>
+                    <div style="font-weight: 500; margin-bottom: 5px;">${existing.productName || '商品名未設定'}</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">
+                        カテゴリ: ${getCategoryPath(existing.category)}
+                    </div>
+                `;
+                
+                // 3秒後にスキャン継続
+                setTimeout(() => {
+                    document.getElementById('scanInfo').style.display = 'none';
+                }, 3000);
+            } else {
+                // 新規商品 - 登録フォームへ
+                closeScanModal();
+                openManualRegister();
+                document.getElementById('formJanCode').value = janCode;
+            }
+        }
+
+        // 連続スキャン処理
+        function handleBatchScan(janCode) {
+            // 既にスキャン済みかチェック
+            const alreadyScanned = batchScannedItems.find(item => item.janCode === janCode);
+            
+            if (alreadyScanned) {
+                // 既にスキャン済み - カウント増やす
+                alreadyScanned.count++;
+                showBatchScanFeedback(janCode, alreadyScanned.count);
+            } else {
+                // 新規スキャン
+                const existing = productMaster.find(p => p.janCode === janCode);
+                
+                batchScannedItems.push({
+                    janCode: janCode,
+                    count: 1,
+                    productName: existing ? existing.productName : '',
+                    category: existing ? existing.category : null,
+                    location: existing ? existing.location : '',
+                    basePrice: existing ? existing.basePrice : null,
+                    memo: existing ? existing.memo : '',
+                    isNew: !existing
+                });
+                
+                showBatchScanFeedback(janCode, 1);
+            }
+        }
+
+        // 連続スキャンのフィードバック表示
+        function showBatchScanFeedback(janCode, count) {
+            const infoDiv = document.getElementById('scanInfo');
+            infoDiv.style.display = 'block';
+            infoDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500; color: var(--success);">✅ スキャン完了</div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                            JAN: ${janCode}
+                        </div>
+                    </div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary);">
+                        ${count}
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary);">
+                    合計: ${batchScannedItems.length}商品 / ${batchScannedItems.reduce((sum, item) => sum + item.count, 0)}個
+                </div>
+                <button class="btn btn-primary" onclick="finishBatchScan()" style="width: 100%; margin-top: 12px; padding: 8px;">
+                    スキャン完了して編集
+                </button>
+            `;
+        }
+
+        // 連続スキャン完了
+        function finishBatchScan() {
+            if (batchScannedItems.length === 0) {
+                alert('まだ商品がスキャンされていません');
+                return;
+            }
+            
+            closeScanModal();
+            openBatchEditModal();
+        }
+
+        // スキャンモーダルを閉じる
+        function closeScanModal() {
+            if (scanner) {
+                scanner.stop().then(() => {
+                    scanner = null;
+                    console.log('✅ スキャナー停止');
+                }).catch(err => {
+                    console.error('❌ スキャナー停止エラー:', err);
+                });
+            }
+            
+            document.getElementById('scanModal').classList.remove('show');
+            document.getElementById('scanInfo').style.display = 'none';
+        }
+
+        // ========================================
+        // 連続スキャン - 編集画面
+        // ========================================
+
+        function openBatchEditModal() {
+            document.getElementById('batchCount').textContent = batchScannedItems.length;
+            
+            const list = document.getElementById('batchEditList');
+            list.innerHTML = batchScannedItems.map((item, index) => `
+                <div class="batch-item">
+                    <div class="batch-item-header">
+                        <div>
+                            <div class="batch-item-jan">JAN: ${item.janCode}</div>
+                            ${item.isNew ? '<span style="background: var(--warning); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">新規</span>' : ''}
+                        </div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--primary);">
+                            x${item.count}
+                        </div>
+                    </div>
+                    
+                    <label class="form-label">商品名</label>
+                    <input type="text" class="form-input" id="name_${index}" value="${item.productName}" placeholder="商品名を入力">
+                    
+                    <label class="form-label">大カテゴリ</label>
+                    <select class="form-select" id="large_${index}" onchange="updateBatchMediumOptions(${index})">
+                        <option value="">選択してください</option>
+                        ${categories.large.map(cat => `
+                            <option value="${cat}" ${item.category?.large === cat ? 'selected' : ''}>${cat}</option>
+                        `).join('')}
+                    </select>
+                    
+                    <label class="form-label">中カテゴリ（任意）</label>
+                    <select class="form-select" id="medium_${index}" onchange="updateBatchSmallOptions(${index})">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">小カテゴリ（任意）</label>
+                    <select class="form-select" id="small_${index}">
+                        <option value="">選択してください</option>
+                    </select>
+                    
+                    <label class="form-label">保管場所（任意）</label>
+                    <select class="form-select" id="location_${index}">
+                        <option value="">選択してください</option>
+                        ${locations.map(loc => `
+                            <option value="${loc}" ${item.location === loc ? 'selected' : ''}>${loc}</option>
+                        `).join('')}
+                    </select>
+                    
+                    <label class="form-label">基準価格（任意）</label>
+                    <input type="number" class="form-input" id="price_${index}" value="${item.basePrice || ''}" placeholder="円">
+                    
+                    <label class="form-label">メモ（任意）</label>
+                    <input type="text" class="form-input" id="memo_${index}" value="${item.memo}" placeholder="メモを入力">
+                </div>
+            `).join('');
+            
+            // 中・小カテゴリーを初期化
+            batchScannedItems.forEach((item, index) => {
+                if (item.category?.large) {
+                    updateBatchMediumOptions(index);
+                    if (item.category?.medium) {
+                        document.getElementById(`medium_${index}`).value = item.category.medium;
+                        updateBatchSmallOptions(index);
+                        if (item.category?.small) {
+                            document.getElementById(`small_${index}`).value = item.category.small;
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('batchEditModal').classList.add('show');
+        }
+
+        function updateBatchMediumOptions(index) {
+            const large = document.getElementById(`large_${index}`).value;
+            const mediumSelect = document.getElementById(`medium_${index}`);
+            const smallSelect = document.getElementById(`small_${index}`);
+            
+            mediumSelect.innerHTML = '<option value="">選択してください</option>';
+            smallSelect.innerHTML = '<option value="">選択してください</option>';
+            
+            if (large && categories.medium[large]) {
+                categories.medium[large].forEach(cat => {
+                    mediumSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            }
+        }
+
+        function updateBatchSmallOptions(index) {
+            const medium = document.getElementById(`medium_${index}`).value;
+            const smallSelect = document.getElementById(`small_${index}`);
+            
+            smallSelect.innerHTML = '<option value="">選択してください</option>';
+            
+            if (medium && categories.small[medium]) {
+                categories.small[medium].forEach(cat => {
+                    smallSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            }
+        }
+
+        function closeBatchEditModal() {
+            if (confirm('入力内容が失われますがよろしいですか？')) {
+                document.getElementById('batchEditModal').classList.remove('show');
+                batchScannedItems = [];
+            }
+        }
+
+        async function saveBatchProducts() {
+            // 入力値を収集
+            for (let i = 0; i < batchScannedItems.length; i++) {
+                const item = batchScannedItems[i];
+                
+                const productName = document.getElementById(`name_${i}`).value.trim();
+                const large = document.getElementById(`large_${i}`).value;
+                const medium = document.getElementById(`medium_${i}`).value;
+                const small = document.getElementById(`small_${i}`).value;
+                const location = document.getElementById(`location_${i}`).value;
+                const basePrice = document.getElementById(`price_${i}`).value;
+                const memo = document.getElementById(`memo_${i}`).value.trim();
+                
+                if (!productName) {
+                    alert(`${i + 1}番目の商品: 商品名を入力してください`);
+                    return;
+                }
+                
+                if (!large) {
+                    alert(`${i + 1}番目の商品: 大カテゴリを選択してください`);
+                    return;
+                }
+                
+                // 既存商品を更新 or 新規作成
+                const existing = productMaster.find(p => p.janCode === item.janCode);
+                
+                if (existing) {
+                    // 更新
+                    existing.productName = productName;
+                    existing.category = { large, medium, small };
+                    existing.location = location;
+                    existing.basePrice = basePrice ? parseFloat(basePrice) : null;
+                    existing.memo = memo;
+                    existing.updatedAt = new Date().toISOString();
+                } else {
+                    // 新規作成
+                    productMaster.push({
+                        id: 'PROD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        janCode: item.janCode,
+                        productName: productName,
+                        category: { large, medium, small },
+                        location: location,
+                        basePrice: basePrice ? parseFloat(basePrice) : null,
+                        memo: memo,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            }
+            
+            await saveData();
+            renderProductList();
+            updateStats();
+            
+            document.getElementById('batchEditModal').classList.remove('show');
+            batchScannedItems = [];
+            
+            showNotification(`✅ ${batchScannedItems.length}商品を保存しました`);
+        }
+
+        // ========================================
+        // 手動登録・編集機能
+        // ========================================
+
+        function openManualRegister() {
+            toggleFabMenu();
+            currentEditingProductId = null;
+            
+            document.getElementById('formModalTitle').textContent = '✍️ 商品登録';
+            document.getElementById('formModalHeader').style.background = 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)';
+            document.getElementById('deleteButtonContainer').style.display = 'none';
+            
+            // フォームをリセット
+            document.getElementById('productForm').reset();
+            
+            // カテゴリーと保管場所のオプションを設定
+            updateFormCategoryOptions();
+            updateFormLocationOptions();
+            
+            document.getElementById('productFormModal').classList.add('show');
+        }
+
+        function editProduct(productId) {
+            const product = productMaster.find(p => p.id === productId);
+            if (!product) return;
+            
+            currentEditingProductId = productId;
+            
+            document.getElementById('formModalTitle').textContent = '✏️ 商品編集';
+            document.getElementById('formModalHeader').style.background = 'linear-gradient(135deg, #FF9F4A 0%, #FF8A1F 100%)';
+            document.getElementById('deleteButtonContainer').style.display = 'block';
+            
+            // フォームに値を設定
+            document.getElementById('formJanCode').value = product.janCode || '';
+            document.getElementById('formProductName').value = product.productName || '';
+            document.getElementById('formBasePrice').value = product.basePrice || '';
+            document.getElementById('formMemo').value = product.memo || '';
+            
+            // カテゴリーと保管場所のオプションを設定
+            updateFormCategoryOptions();
+            updateFormLocationOptions();
+            
+            // カテゴリーを選択
+            if (product.category) {
+                document.getElementById('formLargeCategory').value = product.category.large || '';
+                updateFormMediumOptions();
+                
+                if (product.category.medium) {
+                    document.getElementById('formMediumCategory').value = product.category.medium;
+                    updateFormSmallOptions();
+                    
+                    if (product.category.small) {
+                        document.getElementById('formSmallCategory').value = product.category.small;
+                    }
+                }
+            }
+            
+            // 保管場所を選択
+            if (product.location) {
+                document.getElementById('formLocation').value = product.location;
+            }
+            
+            document.getElementById('productFormModal').classList.add('show');
+        }
+
+        function updateFormCategoryOptions() {
+            const largeSelect = document.getElementById('formLargeCategory');
+            largeSelect.innerHTML = '<option value="">選択してください</option>';
+            categories.large.forEach(cat => {
+                largeSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function updateFormMediumOptions() {
+            const large = document.getElementById('formLargeCategory').value;
+            const mediumSelect = document.getElementById('formMediumCategory');
+            const smallSelect = document.getElementById('formSmallCategory');
+            
+            mediumSelect.innerHTML = '<option value="">選択してください</option>';
+            smallSelect.innerHTML = '<option value="">選択してください</option>';
+            
+            if (large && categories.medium[large]) {
+                categories.medium[large].forEach(cat => {
+                    mediumSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            }
+        }
+
+        function updateFormSmallOptions() {
+            const medium = document.getElementById('formMediumCategory').value;
+            const smallSelect = document.getElementById('formSmallCategory');
+            
+            smallSelect.innerHTML = '<option value="">選択してください</option>';
+            
+            if (medium && categories.small[medium]) {
+                categories.small[medium].forEach(cat => {
+                    smallSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            }
+        }
+
+        function updateFormLocationOptions() {
+            const locationSelect = document.getElementById('formLocation');
+            locationSelect.innerHTML = '<option value="">選択してください</option>';
+            locations.forEach(loc => {
+                locationSelect.innerHTML += `<option value="${loc}">${loc}</option>`;
+            });
+        }
+
+        function closeProductFormModal() {
+            document.getElementById('productFormModal').classList.remove('show');
+            currentEditingProductId = null;
+        }
+
+        // フォーム送信処理
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('productForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const janCode = document.getElementById('formJanCode').value.trim();
+                const productName = document.getElementById('formProductName').value.trim();
+                const large = document.getElementById('formLargeCategory').value;
+                const medium = document.getElementById('formMediumCategory').value;
+                const small = document.getElementById('formSmallCategory').value;
+                const location = document.getElementById('formLocation').value;
+                const basePrice = document.getElementById('formBasePrice').value;
+                const memo = document.getElementById('formMemo').value.trim();
+                
+                if (!productName) {
+                    alert('商品名を入力してください');
+                    return;
+                }
+                
+                if (!large) {
+                    alert('大カテゴリを選択してください');
+                    return;
+                }
+                
+                // JANコード重複チェック（編集時は自分自身を除く）
+                if (janCode) {
+                    const duplicate = productMaster.find(p => 
+                        p.janCode === janCode && p.id !== currentEditingProductId
+                    );
+                    if (duplicate) {
+                        alert('このJANコードは既に登録されています\n商品名: ' + duplicate.productName);
+                        return;
+                    }
+                }
+                
+                if (currentEditingProductId) {
+                    // 編集
+                    const product = productMaster.find(p => p.id === currentEditingProductId);
+                    if (product) {
+                        product.janCode = janCode || null;
+                        product.productName = productName;
+                        product.category = { large, medium, small };
+                        product.location = location;
+                        product.basePrice = basePrice ? parseFloat(basePrice) : null;
+                        product.memo = memo;
+                        product.updatedAt = new Date().toISOString();
+                    }
+                } else {
+                    // 新規登録
+                    productMaster.push({
+                        id: 'PROD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        janCode: janCode || null,
+                        productName: productName,
+                        category: { large, medium, small },
+                        location: location,
+                        basePrice: basePrice ? parseFloat(basePrice) : null,
+                        memo: memo,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+                
+                await saveData();
+                renderProductList();
+                updateStats();
+                closeProductFormModal();
+                
+                showNotification(currentEditingProductId ? '✅ 商品を更新しました' : '✅ 商品を登録しました');
+            });
+        });
+
+        async function deleteProduct() {
+            if (!currentEditingProductId) return;
+            
+            const product = productMaster.find(p => p.id === currentEditingProductId);
+            if (!product) return;
+            
+            if (!confirm(`「${product.productName}」を削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            productMaster = productMaster.filter(p => p.id !== currentEditingProductId);
+            
+            await saveData();
+            renderProductList();
+            updateStats();
+            closeProductFormModal();
+            
+            showNotification('🗑️ 商品を削除しました');
+        }
+
+        // ========================================
+        // 設定機能
+        // ========================================
+
+        function openSettings() {
+            toggleFabMenu();
+            document.getElementById('userIdDisplay').textContent = userId;
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        // ========================================
+        // CSV エクスポート
+        // ========================================
+
+        function exportProductMasterCSV() {
+            if (productMaster.length === 0) {
+                alert('商品が登録されていません');
+                return;
+            }
+
+            let csv = 'JANコード,商品名,大カテゴリ,中カテゴリ,小カテゴリ,保管場所,基準価格,メモ\n';
+            
+            productMaster.forEach(product => {
+                const row = [
+                    escapeCSV(product.janCode || ''),
+                    escapeCSV(product.productName || ''),
+                    escapeCSV(product.category?.large || ''),
+                    escapeCSV(product.category?.medium || ''),
+                    escapeCSV(product.category?.small || ''),
+                    escapeCSV(product.location || ''),
+                    product.basePrice || '',
+                    escapeCSV(product.memo || '')
+                ];
+                csv += row.join(',') + '\n';
+            });
+
+            downloadCSV(csv, `商品マスター_${getDateString()}.csv`);
+            showNotification('✅ CSVファイルをダウンロードしました');
+        }
+
+        function escapeCSV(str) {
+            if (!str) return '""';
+            str = String(str);
+            if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return '"' + str + '"';
+        }
+
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function getDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // ========================================
+        // CSV インポート
+        // ========================================
+
+        function importProductMasterCSV() {
+            const input = document.getElementById('csvFileInput');
+            input.onchange = handleCSVImport;
+            input.click();
+        }
+
+        function handleCSVImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n').filter(line => line.trim());
+                    
+                    if (lines.length < 2) {
+                        alert('CSVファイルが空です');
+                        return;
+                    }
+
+                    // ヘッダー行をスキップ
+                    const dataLines = lines.slice(1);
+                    
+                    if (!confirm(`${dataLines.length}件の商品を読み込みます。\n既存の商品は上書きされます。よろしいですか？`)) {
+                        return;
+                    }
+
+                    let importCount = 0;
+                    let updateCount = 0;
+
+                    dataLines.forEach(line => {
+                        const cols = parseCSVLine(line);
+                        if (cols.length < 2) return; // 最低でもJANコードと商品名が必要
+
+                        const janCode = cols[0]?.trim() || null;
+                        const productName = cols[1]?.trim();
+                        const large = cols[2]?.trim();
+                        const medium = cols[3]?.trim() || '';
+                        const small = cols[4]?.trim() || '';
+                        const location = cols[5]?.trim() || '';
+                        const basePrice = cols[6] ? parseFloat(cols[6]) : null;
+                        const memo = cols[7]?.trim() || '';
+
+                        if (!productName || !large) return; // 商品名と大カテゴリは必須
+
+                        // 既存商品チェック（JANコードで照合）
+                        const existingIndex = janCode ? 
+                            productMaster.findIndex(p => p.janCode === janCode) : -1;
+
+                        if (existingIndex !== -1) {
+                            // 更新
+                            productMaster[existingIndex] = {
+                                ...productMaster[existingIndex],
+                                productName: productName,
+                                category: { large, medium, small },
+                                location: location,
+                                basePrice: basePrice,
+                                memo: memo,
+                                updatedAt: new Date().toISOString()
+                            };
+                            updateCount++;
+                        } else {
+                            // 新規追加
+                            productMaster.push({
+                                id: 'PROD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                                janCode: janCode,
+                                productName: productName,
+                                category: { large, medium, small },
+                                location: location,
+                                basePrice: basePrice,
+                                memo: memo,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            });
+                            importCount++;
+                        }
+                    });
+
+                    await saveData();
+                    renderProductList();
+                    updateStats();
+                    closeSettingsModal();
+
+                    showNotification(`✅ 新規${importCount}件、更新${updateCount}件を読み込みました`);
+                } catch (err) {
+                    console.error('CSV読み込みエラー:', err);
+                    alert('CSVファイルの読み込みに失敗しました: ' + err.message);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+
+            // ファイル選択をリセット
+            e.target.value = '';
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            
+            return result.map(v => v.replace(/^"|"$/g, ''));
+        }
+
+        // ========================================
+        // データ削除
+        // ========================================
+
+        async function clearAllProducts() {
+            if (!confirm('本当にすべての商品を削除しますか？\nこの操作は取り消せません。')) {
+                return;
+            }
+
+            if (!confirm('最終確認: すべての商品マスターが完全に削除されます。よろしいですか？')) {
+                return;
+            }
+
+            productMaster = [];
+            await saveData();
+            renderProductList();
+            updateStats();
+            closeSettingsModal();
+
+            showNotification('🗑️ すべての商品を削除しました');
+        }
+    </script>
+</body>
+</html>
