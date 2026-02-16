@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=./product-master.html">
+    <title>商品マスター登録 - リダイレクト中...</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E8EAF0 100%);
+        }
+        .loading {
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2C7A4D;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>商品マスター登録アプリを起動中...</p>
+        <p style="font-size: 12px; color: #666;">自動で移動しない場合は<a href="./product-master.html">こちら</a>をクリック</p>
+    </div>
+    <script>
+        // JavaScriptでもリダイレクト（念のため）
+        setTimeout(() => {
+            window.location.href = './product-master.html';
+        }, 100);
+    </script>
+</body>
+</html>
+```
+
+5. 下にスクロールして **Commit changes** をクリック
+6. 5分待つ
+
+---
+
+## ✅ 完成後のURL
+
+### これだけでアプリが開く
+```
+https://momo060331.github.io/product-master-app/
+```
+↑ **短くて覚えやすい！**
+
+---
+
+## 📱 インストール用のURL
+
+### スマホにインストールする時も簡単
+```
+https://momo060331.github.io/product-master-app/
+```
+
+このURLをホーム画面に追加すればOK！
+
+---
+
+## 🎉 これで完璧です
+
+### Before（今）
+```
+https://github.com/momo060331/product-master-app
+↑ GitHubの説明ページ（README）が表示される
+```
+
+### After（index.html作成後）
+```
+https://momo060331.github.io/product-master-app/
+↑ 自動でアプリが起動！
