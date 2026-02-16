@@ -721,7 +721,12 @@
                         <strong>ユーザーID:</strong> <code id="userIdDisplay" style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px;"></code>
                     </div>
                 </div>
-                
+
+                <h3 style="margin-bottom: 15px;">📁 カテゴリー管理</h3>
+                <button class="btn btn-secondary" onclick="openCategoryManager()" style="width: 100%; margin-bottom: 30px;">
+                    カテゴリーを編集
+                </button>
+                    
                 <h3 style="margin-bottom: 15px;">📤 エクスポート</h3>
                 <button class="btn btn-secondary" onclick="exportProductMasterCSV()" style="width: 100%; margin-bottom: 10px;">
                     📊 商品マスターCSV
@@ -745,6 +750,33 @@
                 <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
                     ※この操作は取り消せません
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- カテゴリー管理モーダル -->
+    <div class="modal" id="categoryManagerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📁 カテゴリー管理</h2>
+                <button class="close-btn" onclick="closeCategoryManager()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">大カテゴリーを追加</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" class="form-input" id="newLargeCategory" placeholder="新しい大カテゴリー名">
+                        <button class="btn btn-primary" onclick="addLargeCategory()" style="white-space: nowrap;">追加</button>
+                    </div>
+                </div>
+
+                <div id="categoryManagerList" style="margin-top: 30px;">
+                    <!-- カテゴリー一覧がここに表示されます -->
+                </div>
+
+                <button class="btn btn-secondary" onclick="closeCategoryManager()" style="width: 100%; margin-top: 20px;">
+                    閉じる
+                </button>
             </div>
         </div>
     </div>
@@ -1837,6 +1869,394 @@
             closeSettingsModal();
 
             showNotification('🗑️ すべての商品を削除しました');
+        }
+
+        // ========================================
+        // カテゴリー管理
+        // ========================================
+
+        function openCategoryManager() {
+            closeSettingsModal();
+            renderCategoryManager();
+            document.getElementById('categoryManagerModal').classList.add('show');
+        }
+
+        function closeCategoryManager() {
+            document.getElementById('categoryManagerModal').classList.remove('show');
+        }
+
+        function renderCategoryManager() {
+            const list = document.getElementById('categoryManagerList');
+            let html = '';
+
+            categories.large.forEach((large, largeIndex) => {
+                const largeId = `large_${large.replace(/\s/g, '_')}`;
+                const mediumCount = categories.medium[large] ? categories.medium[large].length : 0;
+                
+                html += `
+                    <div style="background: var(--bg-main); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1; cursor: pointer;" onclick="toggleCategorySection('${largeId}')">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span id="${largeId}_icon" style="font-size: 18px; transition: transform 0.3s ease;">▶</span>
+                                    <strong style="font-size: 16px;">${large}</strong>
+                                    <span style="color: var(--text-secondary); font-size: 13px;">(${mediumCount})</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); editLargeCategory('${large}')" style="padding: 6px 10px; font-size: 13px;">
+                                    ✏️
+                                </button>
+                                <button class="btn btn-danger" onclick="event.stopPropagation(); deleteLargeCategory('${large}')" style="padding: 6px 10px; font-size: 13px; background: var(--danger); color: white;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 中カテゴリーセクション -->
+                        <div id="${largeId}" style="display: none; margin-top: 15px; padding-left: 20px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" class="form-input" id="newMedium_${large}" placeholder="中カテゴリーを追加" style="flex: 1;">
+                                <button class="btn btn-primary" onclick="addMediumCategory('${large}')" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">追加</button>
+                            </div>
+
+                            ${categories.medium[large] && categories.medium[large].length > 0 ? 
+                                categories.medium[large].map((medium, mediumIndex) => {
+                                    const mediumId = `medium_${large.replace(/\s/g, '_')}_${medium.replace(/\s/g, '_')}`;
+                                    const smallCount = categories.small[medium] ? categories.small[medium].length : 0;
+                                    
+                                    return `
+                                        <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div style="flex: 1; cursor: pointer;" onclick="toggleCategorySection('${mediumId}')">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <span id="${mediumId}_icon" style="font-size: 16px; transition: transform 0.3s ease;">▶</span>
+                                                        <strong style="font-size: 14px;">${medium}</strong>
+                                                        <span style="color: var(--text-secondary); font-size: 12px;">(${smallCount})</span>
+                                                    </div>
+                                                </div>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <button class="btn btn-secondary" onclick="event.stopPropagation(); editMediumCategory('${large}', '${medium}')" style="padding: 4px 8px; font-size: 12px;">
+                                                        ✏️
+                                                    </button>
+                                                    <button class="btn btn-danger" onclick="event.stopPropagation(); deleteMediumCategory('${large}', '${medium}')" style="padding: 4px 8px; font-size: 12px; background: var(--danger); color: white;">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- 小カテゴリーセクション -->
+                                            <div id="${mediumId}" style="display: none; margin-top: 10px; padding-left: 20px;">
+                                                <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                                                    <input type="text" class="form-input" id="newSmall_${medium}" placeholder="小カテゴリーを追加" style="flex: 1; font-size: 13px;">
+                                                    <button class="btn btn-primary" onclick="addSmallCategory('${medium}')" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">追加</button>
+                                                </div>
+
+                                                ${categories.small[medium] && categories.small[medium].length > 0 ? 
+                                                    categories.small[medium].map((small) => `
+                                                        <div style="background: var(--bg-main); padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                                            <span style="font-size: 13px;">${small}</span>
+                                                            <div style="display: flex; gap: 5px;">
+                                                                <button class="btn btn-secondary" onclick="editSmallCategory('${medium}', '${small}')" style="padding: 3px 6px; font-size: 11px;">
+                                                                    ✏️
+                                                                </button>
+                                                                <button class="btn btn-danger" onclick="deleteSmallCategory('${medium}', '${small}')" style="padding: 3px 6px; font-size: 11px; background: var(--danger); color: white;">
+                                                                    🗑️
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    `).join('') 
+                                                    : '<div style="color: var(--text-secondary); font-size: 12px;">小カテゴリーがありません</div>'
+                                                }
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('') 
+                                : '<div style="color: var(--text-secondary); font-size: 13px;">中カテゴリーがありません</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        function toggleCategorySection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const icon = document.getElementById(`${sectionId}_icon`);
+            
+            if (section.style.display === 'none' || section.style.display === '') {
+                section.style.display = 'block';
+                icon.style.transform = 'rotate(90deg)';
+                icon.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+                icon.textContent = '▶';
+            }
+        }
+
+        // 大カテゴリー追加
+        function addLargeCategory() {
+            const input = document.getElementById('newLargeCategory');
+            const name = input.value.trim();
+            
+            if (!name) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (categories.large.includes(name)) {
+                alert('このカテゴリーは既に存在します');
+                return;
+            }
+            
+            categories.large.push(name);
+            categories.medium[name] = [];
+            
+            saveData();
+            renderCategoryManager();
+            input.value = '';
+            showNotification('✅ 大カテゴリーを追加しました');
+        }
+
+        // 中カテゴリー追加
+        function addMediumCategory(large) {
+            const input = document.getElementById(`newMedium_${large}`);
+            const name = input.value.trim();
+            
+            if (!name) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (!categories.medium[large]) {
+                categories.medium[large] = [];
+            }
+            
+            if (categories.medium[large].includes(name)) {
+                alert('このカテゴリーは既に存在します');
+                return;
+            }
+            
+            categories.medium[large].push(name);
+            categories.small[name] = [];
+            
+            saveData();
+            renderCategoryManager();
+            input.value = '';
+            showNotification('✅ 中カテゴリーを追加しました');
+        }
+
+        // 小カテゴリー追加
+        function addSmallCategory(medium) {
+            const input = document.getElementById(`newSmall_${medium}`);
+            const name = input.value.trim();
+            
+            if (!name) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (!categories.small[medium]) {
+                categories.small[medium] = [];
+            }
+            
+            if (categories.small[medium].includes(name)) {
+                alert('このカテゴリーは既に存在します');
+                return;
+            }
+            
+            categories.small[medium].push(name);
+            
+            saveData();
+            renderCategoryManager();
+            input.value = '';
+            showNotification('✅ 小カテゴリーを追加しました');
+        }
+
+        // カテゴリー編集
+        function editLargeCategory(oldName) {
+            const newName = prompt('新しいカテゴリー名を入力してください', oldName);
+            
+            if (!newName || newName === oldName) return;
+            
+            if (!newName.trim()) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (categories.large.includes(newName)) {
+                alert('このカテゴリー名は既に存在します');
+                return;
+            }
+            
+            // 商品のカテゴリー名を更新
+            productMaster.forEach(product => {
+                if (product.category.large === oldName) {
+                    product.category.large = newName;
+                }
+            });
+            
+            // カテゴリー構造を更新
+            const index = categories.large.indexOf(oldName);
+            categories.large[index] = newName;
+            
+            if (categories.medium[oldName]) {
+                categories.medium[newName] = categories.medium[oldName];
+                delete categories.medium[oldName];
+            }
+            
+            saveData();
+            renderCategoryManager();
+            renderProductList();
+            showNotification('✅ カテゴリー名を変更しました');
+        }
+
+        function editMediumCategory(large, oldName) {
+            const newName = prompt('新しいカテゴリー名を入力してください', oldName);
+            
+            if (!newName || newName === oldName) return;
+            
+            if (!newName.trim()) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (categories.medium[large] && categories.medium[large].includes(newName)) {
+                alert('このカテゴリー名は既に存在します');
+                return;
+            }
+            
+            // 商品のカテゴリー名を更新
+            productMaster.forEach(product => {
+                if (product.category.medium === oldName) {
+                    product.category.medium = newName;
+                }
+            });
+            
+            // カテゴリー構造を更新
+            if (categories.medium[large]) {
+                const index = categories.medium[large].indexOf(oldName);
+                categories.medium[large][index] = newName;
+            }
+            
+            if (categories.small[oldName]) {
+                categories.small[newName] = categories.small[oldName];
+                delete categories.small[oldName];
+            }
+            
+            saveData();
+            renderCategoryManager();
+            renderProductList();
+            showNotification('✅ カテゴリー名を変更しました');
+        }
+
+        function editSmallCategory(medium, oldName) {
+            const newName = prompt('新しいカテゴリー名を入力してください', oldName);
+            
+            if (!newName || newName === oldName) return;
+            
+            if (!newName.trim()) {
+                alert('カテゴリー名を入力してください');
+                return;
+            }
+            
+            if (categories.small[medium] && categories.small[medium].includes(newName)) {
+                alert('このカテゴリー名は既に存在します');
+                return;
+            }
+            
+            // 商品のカテゴリー名を更新
+            productMaster.forEach(product => {
+                if (product.category.small === oldName) {
+                    product.category.small = newName;
+                }
+            });
+            
+            // カテゴリー構造を更新
+            if (categories.small[medium]) {
+                const index = categories.small[medium].indexOf(oldName);
+                categories.small[medium][index] = newName;
+            }
+            
+            saveData();
+            renderCategoryManager();
+            renderProductList();
+            showNotification('✅ カテゴリー名を変更しました');
+        }
+
+        // カテゴリー削除
+        function deleteLargeCategory(large) {
+            const hasProducts = productMaster.some(p => p.category.large === large);
+            
+            if (hasProducts) {
+                alert('このカテゴリーを使用している商品があるため削除できません');
+                return;
+            }
+            
+            if (!confirm(`「${large}」とその配下のすべてのカテゴリーを削除しますか？`)) {
+                return;
+            }
+            
+            // 中カテゴリーと小カテゴリーも削除
+            if (categories.medium[large]) {
+                categories.medium[large].forEach(medium => {
+                    delete categories.small[medium];
+                });
+                delete categories.medium[large];
+            }
+            
+            categories.large = categories.large.filter(c => c !== large);
+            
+            saveData();
+            renderCategoryManager();
+            showNotification('✅ 大カテゴリーを削除しました');
+        }
+
+        function deleteMediumCategory(large, medium) {
+            const hasProducts = productMaster.some(p => p.category.medium === medium);
+            
+            if (hasProducts) {
+                alert('このカテゴリーを使用している商品があるため削除できません');
+                return;
+            }
+            
+            if (!confirm(`「${medium}」とその配下のすべてのカテゴリーを削除しますか？`)) {
+                return;
+            }
+            
+            delete categories.small[medium];
+            
+            if (categories.medium[large]) {
+                categories.medium[large] = categories.medium[large].filter(c => c !== medium);
+            }
+            
+            saveData();
+            renderCategoryManager();
+            showNotification('✅ 中カテゴリーを削除しました');
+        }
+
+        function deleteSmallCategory(medium, small) {
+            const hasProducts = productMaster.some(p => p.category.small === small);
+            
+            if (hasProducts) {
+                alert('このカテゴリーを使用している商品があるため削除できません');
+                return;
+            }
+            
+            if (!confirm(`「${small}」を削除しますか？`)) {
+                return;
+            }
+            
+            if (categories.small[medium]) {
+                categories.small[medium] = categories.small[medium].filter(c => c !== small);
+            }
+            
+            saveData();
+            renderCategoryManager();
+            showNotification('✅ 小カテゴリーを削除しました');
         }
     </script>
 </body>
