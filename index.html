@@ -2,87 +2,1566 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=./product-master.html">
-    <title>商品マスター登録 - リダイレクト中...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品マスター登録</title>
+    <link rel="icon" href="./assets/icons/product-master-app.png" type="image/png">
+    <link rel="apple-touch-icon" href="./assets/icons/product-master-app.png">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#2C7A4D">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2C7A4D;
+            --primary-light: #4CAF6F;
+            --primary-dark: #1E5A3A;
+            --secondary: #FF9F4A;
+            --danger: #E74C3C;
+            --success: #27AE60;
+            --warning: #F39C12;
+            --bg-main: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-primary: #2C3E50;
+            --text-secondary: #7F8C8D;
+            --border: #E0E0E0;
+            --shadow: rgba(0,0,0,0.08);
+        }
         body {
-            font-family: sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #F8F9FA 0%, #E8EAF0 100%);
+            font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+            background: linear-gradient(135deg,#F8F9FA 0%,#E8EAF0 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 80px;
         }
-        .loading {
-            text-align: center;
+        .header {
+            background: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky; top: 0; z-index: 100;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2C7A4D;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .header h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .header-subtitle { font-size: 13px; opacity: .9; margin-top: 4px; font-weight: 300; }
+        .sync-status {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.2); padding: 4px 12px;
+            border-radius: 12px; font-size: 12px; margin-top: 8px; transition: all .3s;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .sync-status.synced  { background: rgba(39,174,96,.3); }
+        .sync-status.syncing { background: rgba(255,159,74,.3); }
+        .sync-status.error   { background: rgba(231,76,60,.3); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .stats-card { background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 15px; }
+        .stat-item { text-align: center; padding: 15px; background: var(--bg-main); border-radius: 8px; }
+        .stat-number { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 5px; }
+        .stat-label  { font-size: 13px; color: var(--text-secondary); }
+        .search-box { background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
+        .search-input {
+            width: 100%; padding: 12px 20px; border: 2px solid var(--border);
+            border-radius: 25px; font-size: 15px; transition: all .3s;
         }
+        .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(44,122,77,.1); }
+        .product-list { display: grid; gap: 15px; }
+        .product-card {
+            background: var(--bg-card); border-radius: 12px; padding: 20px;
+            box-shadow: 0 2px 8px var(--shadow); transition: all .3s; cursor: pointer;
+        }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+        .product-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+        .product-name { font-size: 18px; font-weight: 700; color: var(--text-primary); flex: 1; }
+        .product-jan  { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+        .product-info {
+            display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+            gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);
+        }
+        .info-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+        .maker-badge {
+            display: inline-block; background: rgba(44,122,77,.1); color: var(--primary);
+            padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-top: 6px;
+        }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .empty-state-icon { font-size: 64px; margin-bottom: 20px; opacity: .5; }
+        .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 99; }
+        .fab {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg,var(--secondary) 0%,#FF8A1F 100%);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 20px rgba(255,159,74,.4); cursor: pointer; transition: all .3s;
+            border: none; font-size: 28px; color: white;
+        }
+        .fab:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 8px 30px rgba(255,159,74,.6); }
+        .fab-menu { position: absolute; bottom: 80px; right: 0; display: none; flex-direction: column; gap: 10px; min-width: 200px; }
+        .fab-menu.show { display: flex; animation: fadeIn .3s ease; }
+        .fab-menu-item {
+            background: var(--bg-card); padding: 12px 20px; border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow); cursor: pointer; transition: all .3s;
+            display: flex; align-items: center; gap: 10px; font-size: 14px;
+        }
+        .fab-menu-item:hover { transform: translateX(-5px); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+        .notification {
+            position: fixed; top: 80px; right: 20px; color: white;
+            padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px var(--shadow);
+            z-index: 2000; animation: slideDown .3s ease; font-size: 14px; max-width: 280px;
+        }
+        .notification.success { background: var(--success); }
+        .notification.info    { background: var(--primary); }
+        .notification.warning { background: var(--warning); }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,.6); backdrop-filter: blur(5px);
+            z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--bg-card); border-radius: 16px; max-width: 600px; width: 100%;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+            animation: slideUp .3s ease;
+        }
+        .modal-header {
+            background: linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+            color: white; padding: 20px; border-radius: 16px 16px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h2 { font-size: 20px; font-weight: 700; margin: 0; }
+        .close-btn {
+            background: none; border: none; color: white; font-size: 28px; cursor: pointer;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: all .3s;
+        }
+        .close-btn:hover { background: rgba(255,255,255,.2); }
+        .modal-body { padding: 20px; }
+        .camera-view {
+            width: 100%; max-width: 500px; min-height: 300px; background: #000;
+            border-radius: 8px; margin: 0 auto; display: flex; align-items: center;
+            justify-content: center; color: white; position: relative; overflow: hidden;
+        }
+        .camera-view video { width: 100%; height: 100%; object-fit: cover; }
+        #cameraView > div { width: 100% !important; }
+        .scan-line {
+            position: absolute; width: 80%; height: 2px; background: var(--secondary);
+            animation: scan 2s ease-in-out infinite; box-shadow: 0 0 10px var(--secondary);
+        }
+        @keyframes scan { 0%,100% { top: 20%; } 50% { top: 80%; } }
+
+        /* ─── 予測バナー ─── */
+        .prediction-banner {
+            background: linear-gradient(135deg,#E8F5E9,#F1F8E9);
+            border: 2px solid var(--primary); border-radius: 12px;
+            padding: 16px; margin-bottom: 16px; animation: fadeIn .4s ease;
+        }
+        .prediction-banner .pb-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .prediction-banner .pb-title { font-weight: 700; color: var(--primary); font-size: 15px; }
+        .prediction-banner .pb-source {
+            font-size: 11px; background: var(--primary); color: white;
+            padding: 2px 8px; border-radius: 10px;
+        }
+        .prediction-banner .pb-maker { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .prediction-banner .pb-category { font-size: 13px; color: var(--text-secondary); }
+        .prediction-banner .pb-apply {
+            margin-top: 12px; padding: 8px 16px; background: var(--primary); color: white;
+            border: none; border-radius: 20px; cursor: pointer; font-size: 13px;
+            font-family: inherit; transition: all .2s;
+        }
+        .prediction-banner .pb-apply:hover { background: var(--primary-dark); }
+
+        /* ─── OFF API バナー ─── */
+        .off-banner {
+            background: linear-gradient(135deg,#E3F2FD,#EDE7F6);
+            border: 2px solid #5C6BC0; border-radius: 12px;
+            padding: 16px; margin-bottom: 16px; animation: fadeIn .4s ease;
+        }
+        .off-banner .ob-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .off-banner .ob-title { font-weight: 700; color: #5C6BC0; font-size: 15px; }
+        .off-banner .ob-source { font-size: 11px; background: #5C6BC0; color: white; padding: 2px 8px; border-radius: 10px; }
+        .off-banner .ob-product { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .off-banner .ob-brand   { font-size: 13px; color: var(--text-secondary); }
+        .off-banner .ob-apply {
+            margin-top: 12px; padding: 8px 16px; background: #5C6BC0; color: white;
+            border: none; border-radius: 20px; cursor: pointer; font-size: 13px;
+            font-family: inherit; transition: all .2s;
+        }
+        .off-banner .ob-apply:hover { background: #3949AB; }
+
+        /* ─── 学習済みバナー ─── */
+        .learned-banner {
+            background: linear-gradient(135deg,#FFF8E1,#FFF3E0);
+            border: 2px solid var(--warning); border-radius: 12px;
+            padding: 16px; margin-bottom: 16px; animation: fadeIn .4s ease;
+        }
+        .learned-banner .lb-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .learned-banner .lb-title { font-weight: 700; color: var(--warning); font-size: 15px; }
+        .learned-banner .lb-product { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .learned-banner .lb-detail  { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 25px;
+            font-size: 15px; font-weight: 500; cursor: pointer; transition: all .3s; font-family: inherit;
+        }
+        .btn-primary  { background: linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%); color: white; box-shadow: 0 4px 12px rgba(44,122,77,.3); }
+        .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,122,77,.4); }
+        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 2px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+        .batch-item { background: var(--bg-main); padding: 15px; border-radius: 8px; margin-bottom: 12px; }
+        .batch-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .batch-item-jan { font-weight: 500; color: var(--primary); }
+        .form-input {
+            width: 100%; padding: 10px 14px; border: 2px solid var(--border);
+            border-radius: 8px; font-size: 14px; margin-top: 8px; transition: all .3s; font-family: inherit;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(44,122,77,.1); }
+        .form-select {
+            width: 100%; padding: 10px 14px; border: 2px solid var(--border);
+            border-radius: 8px; font-size: 14px; margin-top: 8px; cursor: pointer;
+            background: white; transition: all .3s; font-family: inherit;
+        }
+        .form-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(44,122,77,.1); }
+        .form-label { display: block; margin-top: 12px; margin-bottom: 4px; font-weight: 500; color: var(--text-primary); font-size: 13px; }
+        @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp   { from { opacity: 0; transform: translateY(30px);  } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+
+        /* 学習統計 */
+        .learn-stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .learn-stat-chip {
+            background: var(--bg-main); border-radius: 20px; padding: 6px 14px;
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .learn-stat-chip strong { color: var(--primary); }
+
+        /* loading spinner */
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="loading">
-        <div class="spinner"></div>
-        <p>商品マスター登録アプリを起動中...</p>
-        <p style="font-size: 12px; color: #666;">自動で移動しない場合は<a href="./product-master.html">こちら</a>をクリック</p>
+
+<div class="header">
+    <h1>📦 商品マスター登録</h1>
+    <div class="header-subtitle">在庫管理アプリ連携 · 企業コード予測 · 学習機能</div>
+    <div id="syncStatus" class="sync-status">⏳ 読込中...</div>
+</div>
+
+<div class="container">
+    <div class="stats-card">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" id="totalProducts">0</div>
+                <div class="stat-label">登録商品数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="withJAN">0</div>
+                <div class="stat-label">JANコード登録済み</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalCategories">0</div>
+                <div class="stat-label">カテゴリー数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="learnedCount">0</div>
+                <div class="stat-label">学習済みコード</div>
+            </div>
+        </div>
     </div>
-    <script>
-        // JavaScriptでもリダイレクト（念のため）
-        setTimeout(() => {
-            window.location.href = './product-master.html';
-        }, 100);
-    </script>
+
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 JANコード、商品名、メーカー、カテゴリーで検索...">
+    </div>
+
+    <div class="product-list" id="productList">
+        <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <div>まだ商品が登録されていません</div>
+            <div style="margin-top:10px;color:var(--text-secondary);font-size:14px;">右下の + ボタンから商品を追加しましょう</div>
+        </div>
+    </div>
+</div>
+
+<!-- FABメニュー -->
+<div class="fab-container">
+    <div class="fab-menu" id="fabMenu">
+        <div class="fab-menu-item" onclick="openNormalScan()">📷 スキャン登録</div>
+        <div class="fab-menu-item" onclick="openBatchScan()">⚡ 連続スキャン</div>
+        <div class="fab-menu-item" onclick="openManualRegister()">✍️ 手動登録</div>
+        <div class="fab-menu-item" onclick="openSettings()">⚙️ 設定</div>
+    </div>
+    <button class="fab" id="fabBtn" onclick="toggleFabMenu()">+</button>
+</div>
+
+<!-- スキャンモーダル -->
+<div class="modal" id="scanModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="scanModalTitle">📷 バーコードスキャン</h2>
+            <button class="close-btn" onclick="closeScanModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="camera-view" id="cameraView"><div class="scan-line"></div></div>
+            <div style="text-align:center;margin-top:10px;color:var(--text-secondary);font-size:14px;">バーコードをカメラに映してください</div>
+            <div id="scanInfo" style="margin-top:15px;display:none;"></div>
+            <button class="btn btn-secondary" onclick="closeScanModal()" style="width:100%;margin-top:15px;">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 連続スキャン編集モーダル -->
+<div class="modal" id="batchEditModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚡ 連続スキャン - 編集</h2>
+            <button class="close-btn" onclick="closeBatchEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background:#E8F5E9;padding:12px;border-radius:8px;margin-bottom:15px;">
+                <strong>スキャン完了:</strong> <span id="batchCount">0</span>件
+            </div>
+            <div id="batchEditList"></div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeBatchEditModal()" style="flex:1;">キャンセル</button>
+                <button class="btn btn-primary" onclick="saveBatchProducts()" style="flex:2;">一括保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 手動登録・編集モーダル -->
+<div class="modal" id="productFormModal">
+    <div class="modal-content">
+        <div class="modal-header" id="formModalHeader">
+            <h2 id="formModalTitle">✍️ 商品登録</h2>
+            <button class="close-btn" onclick="closeProductFormModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- 予測・学習バナー挿入エリア -->
+            <div id="predictionArea"></div>
+
+            <form id="productForm">
+                <label class="form-label">JANコード（任意）</label>
+                <div style="display:flex;gap:8px;align-items:flex-end;">
+                    <input type="text" class="form-input" id="formJanCode" placeholder="JANコードを入力" style="flex:1;">
+                    <button type="button" class="btn btn-secondary" onclick="lookupJAN()" style="padding:10px 14px;margin-top:8px;white-space:nowrap;font-size:13px;" id="lookupBtn">🔍 検索</button>
+                </div>
+
+                <label class="form-label">商品名（必須）</label>
+                <input type="text" class="form-input" id="formProductName" placeholder="商品名を入力" required>
+
+                <label class="form-label">メーカー（任意）</label>
+                <input type="text" class="form-input" id="formMaker" placeholder="例：花王、明治">
+
+                <label class="form-label">大カテゴリ（必須）</label>
+                <select class="form-select" id="formLargeCategory" required onchange="updateFormMediumOptions()">
+                    <option value="">選択してください</option>
+                </select>
+
+                <label class="form-label">中カテゴリ（任意）</label>
+                <select class="form-select" id="formMediumCategory" onchange="updateFormSmallOptions()">
+                    <option value="">選択してください</option>
+                </select>
+
+                <label class="form-label">小カテゴリ（任意）</label>
+                <select class="form-select" id="formSmallCategory">
+                    <option value="">選択してください</option>
+                </select>
+
+                <label class="form-label">保管場所（任意）</label>
+                <select class="form-select" id="formLocation">
+                    <option value="">選択してください</option>
+                </select>
+
+                <label class="form-label">基準価格（任意）</label>
+                <input type="number" class="form-input" id="formBasePrice" placeholder="円">
+
+                <label class="form-label">メモ（任意）</label>
+                <textarea class="form-input" id="formMemo" placeholder="メモを入力" style="min-height:80px;resize:vertical;"></textarea>
+
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeProductFormModal()" style="flex:1;">キャンセル</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">保存</button>
+                </div>
+            </form>
+
+            <div id="deleteButtonContainer" style="display:none;margin-top:15px;">
+                <button class="btn" onclick="deleteProduct()" style="width:100%;background:var(--danger);color:white;">🗑️ この商品を削除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ 設定</h2>
+            <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background:#E8F5E9;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #4CAF50;">
+                <div style="font-weight:500;margin-bottom:8px;">📡 Firebase同期</div>
+                <div style="font-size:13px;color:var(--text-secondary);">
+                    商品マスターは在庫管理アプリとリアルタイム同期されます<br>
+                    <strong>ユーザーID:</strong> <code id="userIdDisplay" style="background:rgba(0,0,0,.1);padding:2px 6px;border-radius:4px;font-size:11px;"></code>
+                </div>
+            </div>
+
+            <!-- 学習統計 -->
+            <div style="background:#FFF8E1;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid var(--warning);">
+                <div style="font-weight:500;margin-bottom:8px;">🧠 学習状況</div>
+                <div class="learn-stat-row" id="learnStatsRow">
+                    <div class="learn-stat-chip">読込中...</div>
+                </div>
+                <div style="margin-top:10px;">
+                    <button class="btn btn-secondary" onclick="openMakerLearningView()" style="font-size:13px;padding:8px 16px;">学習済みコードを確認</button>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom:15px;">📁 カテゴリー管理</h3>
+            <button class="btn btn-secondary" onclick="openCategoryManager()" style="width:100%;margin-bottom:30px;">カテゴリーを編集</button>
+
+            <h3 style="margin-bottom:15px;">📤 エクスポート</h3>
+            <button class="btn btn-secondary" onclick="exportProductMasterCSV()" style="width:100%;margin-bottom:10px;">📊 商品マスターCSV</button>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:30px;">登録した商品情報をCSVファイルでダウンロード</p>
+
+            <h3 style="margin-bottom:15px;">📥 インポート</h3>
+            <button class="btn btn-secondary" onclick="importProductMasterCSV()" style="width:100%;margin-bottom:10px;">📂 商品マスターCSV</button>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:30px;">CSVファイルから商品情報を読み込み（既存商品は上書き）</p>
+
+            <h3 style="margin-bottom:15px;">🗑️ データ管理</h3>
+            <button class="btn" onclick="clearAllProducts()" style="width:100%;background:var(--danger);color:white;margin-bottom:8px;">すべての商品を削除</button>
+            <button class="btn btn-secondary" onclick="clearAllLearning()" style="width:100%;">学習データをリセット</button>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">※この操作は取り消せません</p>
+        </div>
+    </div>
+</div>
+
+<!-- カテゴリー管理モーダル -->
+<div class="modal" id="categoryManagerModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📁 カテゴリー管理</h2>
+            <button class="close-btn" onclick="closeCategoryManager()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+                <input type="text" class="form-input" id="newLargeCategory" placeholder="新しい大カテゴリー名" style="flex:1;">
+                <button class="btn btn-primary" onclick="addLargeCategory()" style="white-space:nowrap;">追加</button>
+            </div>
+            <div id="categoryManagerList" style="margin-top:20px;"></div>
+            <button class="btn btn-secondary" onclick="closeCategoryManager()" style="width:100%;margin-top:20px;">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<!-- 学習済みコード閲覧モーダル -->
+<div class="modal" id="makerLearningModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🧠 学習済みコード一覧</h2>
+            <button class="close-btn" onclick="closeMakerLearningView()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:15px;">スキャン・登録するたびに自動的に蓄積されます。</p>
+            <div id="makerLearningList"></div>
+            <button class="btn btn-secondary" onclick="closeMakerLearningView()" style="width:100%;margin-top:20px;">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<!-- バーコードスキャナー -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+// ============================================================
+// Firebase 初期化
+// ============================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyCy0q1fEX4Utch_NiLvxdh96fQIWaXFs-A",
+    authDomain: "home-inventory-6f9b0.firebaseapp.com",
+    projectId: "home-inventory-6f9b0",
+    storageBucket: "home-inventory-6f9b0.firebasestorage.app",
+    messagingSenderId: "547759174138",
+    appId: "1:547759174138:web:95ac043ca6bc6937d73443"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+db.enablePersistence().catch(err => console.warn('オフライン永続化:', err.code));
+
+// ============================================================
+// ユーザーID
+// ============================================================
+let userId = localStorage.getItem('inventoryUserId');
+if (!userId) {
+    userId = 'USER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('inventoryUserId', userId);
+}
+
+// ============================================================
+// 企業コード辞書（GS1事業者コード 7桁 → メーカー情報）
+// 家庭用品・食品・飲料・衛生用品などを幅広くカバー
+// ============================================================
+const MAKER_DICT = {
+    // ── 洗濯・掃除・日用品 ──
+    "4901777": { company: "花王",           category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4901301": { company: "ライオン",        category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4902430": { company: "P&G Japan",     category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4901885": { company: "エステー",        category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4903301": { company: "大王製紙",        category: "日用品", large: "日用品", medium: "トイレ・衛生用品" },
+    "4902011": { company: "ユニ・チャーム",   category: "日用品", large: "日用品", medium: "トイレ・衛生用品" },
+    "4903111": { company: "日本製紙クレシア", category: "日用品", large: "日用品", medium: "トイレ・衛生用品" },
+    "4901080": { company: "小林製薬",        category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4902393": { company: "白元アース",      category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4902407": { company: "アース製薬",      category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4901516": { company: "SCジョンソン",    category: "日用品", large: "日用品", medium: "洗濯・掃除用品" },
+    "4901521": { company: "レック",          category: "日用品", large: "日用品", medium: "キッチン用品" },
+
+    // ── スキンケア・ヘアケア・歯磨き ──
+    "4901872": { company: "資生堂",          category: "日用品", large: "日用品", medium: "スキンケア・ヘアケア" },
+    "4971710": { company: "コーセー",         category: "日用品", large: "日用品", medium: "スキンケア・ヘアケア" },
+    "4902506": { company: "クラシエ",         category: "日用品", large: "日用品", medium: "スキンケア・ヘアケア" },
+    "4988167": { company: "マンダム",         category: "日用品", large: "日用品", medium: "スキンケア・ヘアケア" },
+    "4902111": { company: "花王（スキンケア）",category: "日用品", large: "日用品", medium: "スキンケア・ヘアケア" },
+    "4902414": { company: "サンスター",       category: "日用品", large: "日用品", medium: "オーラルケア" },
+
+    // ── 食品：調味料・加工食品 ──
+    "4902102": { company: "味の素",          category: "食品", large: "食品", medium: "調味料" },
+    "4903001": { company: "キッコーマン",     category: "食品", large: "食品", medium: "調味料" },
+    "4902501": { company: "ヤマサ醤油",      category: "食品", large: "食品", medium: "調味料" },
+    "4902288": { company: "ミツカン",         category: "食品", large: "食品", medium: "調味料" },
+    "4902190": { company: "ハウス食品",       category: "食品", large: "食品", medium: "加工食品" },
+    "4901420": { company: "エスビー食品",     category: "食品", large: "食品", medium: "調味料" },
+    "4902220": { company: "丸大豆",          category: "食品", large: "食品", medium: "調味料" },
+    "4902165": { company: "カゴメ",           category: "食品", large: "食品", medium: "調味料" },
+    "4901277": { company: "永谷園",          category: "食品", large: "食品", medium: "加工食品" },
+    "4902753": { company: "日本ハム",         category: "食品", large: "食品", medium: "加工食品" },
+    "4902742": { company: "丸大食品",         category: "食品", large: "食品", medium: "加工食品" },
+    "4901740": { company: "伊藤ハム",         category: "食品", large: "食品", medium: "加工食品" },
+    "4902345": { company: "ニッスイ",         category: "食品", large: "食品", medium: "加工食品" },
+    "4902110": { company: "マルハニチロ",     category: "食品", large: "食品", medium: "加工食品" },
+    "4901135": { company: "はごろもフーズ",   category: "食品", large: "食品", medium: "缶詰・瓶詰" },
+    "4902030": { company: "いなば食品",       category: "食品", large: "食品", medium: "缶詰・瓶詰" },
+
+    // ── インスタント・レトルト ──
+    "4902105": { company: "日清食品",        category: "食品", large: "食品", medium: "インスタント" },
+    "4901990": { company: "東洋水産（マルちゃん）", category: "食品", large: "食品", medium: "インスタント" },
+    "4902570": { company: "サンヨー食品",    category: "食品", large: "食品", medium: "インスタント" },
+    "4901881": { company: "エースコック",    category: "食品", large: "食品", medium: "インスタント" },
+
+    // ── 乳製品・チルド ──
+    "4903110": { company: "森永乳業",        category: "食品", large: "食品", medium: "乳製品" },
+    "4902090": { company: "雪印メグミルク",  category: "食品", large: "食品", medium: "乳製品" },
+    "4903247": { company: "明治（乳製品）",  category: "食品", large: "食品", medium: "乳製品" },
+    "4902241": { company: "よつ葉乳業",     category: "食品", large: "食品", medium: "乳製品" },
+    "4902124": { company: "グリコ",          category: "食品", large: "食品", medium: "乳製品・菓子" },
+
+    // ── 菓子・製菓 ──
+    "4902346": { company: "明治（菓子）",    category: "食品", large: "食品", medium: "菓子・スナック" },
+    "4902777": { company: "ロッテ",          category: "食品", large: "食品", medium: "菓子・スナック" },
+    "4901351": { company: "森永製菓",        category: "食品", large: "食品", medium: "菓子・スナック" },
+    "4902501": { company: "カルビー",        category: "食品", large: "食品", medium: "菓子・スナック" },
+    "4902118": { company: "湖池屋",          category: "食品", large: "食品", medium: "菓子・スナック" },
+
+    // ── 飲料 ──
+    "4902102": { company: "コカ・コーラ",    category: "飲料", large: "食品", medium: "飲料" },
+    "4901777": { company: "花王（飲料）",    category: "飲料", large: "食品", medium: "飲料" },
+    "4901085": { company: "サントリー",      category: "飲料", large: "食品", medium: "飲料" },
+    "4901777": { company: "伊藤園",          category: "飲料", large: "食品", medium: "飲料" },
+    "4902102": { company: "大塚製薬",        category: "飲料・医薬品", large: "食品", medium: "飲料" },
+    "4902228": { company: "アサヒ飲料",      category: "飲料", large: "食品", medium: "飲料" },
+    "4902102": { company: "キリンビバレッジ", category: "飲料", large: "食品", medium: "飲料" },
+
+    // ── 医薬品・サプリ ──
+    "4987123": { company: "大正製薬",        category: "医薬品", large: "医薬品", medium: "内服薬" },
+    "4987441": { company: "第一三共ヘルスケア", category: "医薬品", large: "医薬品", medium: "内服薬" },
+    "4987087": { company: "エスエス製薬",    category: "医薬品", large: "医薬品", medium: "内服薬" },
+    "4903301": { company: "興和",            category: "医薬品", large: "医薬品", medium: "内服薬" },
+    "4987001": { company: "ロート製薬",      category: "医薬品", large: "医薬品", medium: "外用薬" },
+    "4987513": { company: "久光製薬",        category: "医薬品", large: "医薬品", medium: "外用薬" },
+    "4978234": { company: "池田模範堂",      category: "医薬品", large: "医薬品", medium: "外用薬" },
+    "4987107": { company: "小林製薬（医薬）", category: "医薬品", large: "医薬品", medium: "内服薬" },
+
+    // ── 文具・雑貨 ──
+    "4901480": { company: "コクヨ",          category: "文具・雑貨", large: "日用品", medium: "文具・雑貨" },
+    "4974052": { company: "パイロット",       category: "文具・雑貨", large: "日用品", medium: "文具・雑貨" },
+    "4901770": { company: "ぺんてる",         category: "文具・雑貨", large: "日用品", medium: "文具・雑貨" },
+};
+
+// カテゴリー自動マッピング（メーカー名 → 大カテゴリ推定）
+const MAKER_CATEGORY_MAP = {
+    "花王":     { large: "日用品", medium: "洗濯・掃除用品" },
+    "ライオン": { large: "日用品", medium: "洗濯・掃除用品" },
+    "P&G Japan":{ large: "日用品", medium: "洗濯・掃除用品" },
+    "ユニ・チャーム": { large: "日用品", medium: "トイレ・衛生用品" },
+    "資生堂":   { large: "日用品", medium: "スキンケア・ヘアケア" },
+    "日清食品": { large: "食品", medium: "インスタント" },
+    "明治（菓子）": { large: "食品", medium: "菓子・スナック" },
+    "サントリー": { large: "食品", medium: "飲料" },
+    "大正製薬": { large: "医薬品", medium: "内服薬" },
+    "ロート製薬": { large: "医薬品", medium: "外用薬" },
+};
+
+// ============================================================
+// グローバル変数
+// ============================================================
+let productMaster = [];
+let makerLearning = {};   // { "4901777xxxxxxx": { productName, maker, category, location }, "4901777": "花王" }
+let categories = {
+    large: ['食品', '日用品', '医薬品'],
+    medium: {
+        '食品': ['調味料', 'パウチ', '備蓄', '飲料', 'インスタント', '乳製品', '菓子・スナック', '缶詰・瓶詰', '加工食品'],
+        '日用品': ['洗濯・掃除用品', 'トイレ・衛生用品', 'キッチン用品', 'スキンケア・ヘアケア', 'オーラルケア', '文具・雑貨'],
+        '医薬品': ['内服薬', '外用薬', '救急用品']
+    },
+    small: {}
+};
+let locations = ['キッチン棚A', 'キッチン棚B', '冷蔵庫', 'パントリー', '洗面所下', 'リビング収納'];
+let scanner = null;
+let scanMode = 'normal';
+let batchScannedItems = [];
+let currentEditingProductId = null;
+
+// ============================================================
+// 初期化
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+    await loadData();
+    renderProductList();
+    updateStats();
+    setupSearch();
+    setupRealtimeListener();
+});
+
+// ============================================================
+// データ読み込み
+// ============================================================
+async function loadData() {
+    try {
+        updateSyncStatus('loading');
+        const doc = await db.collection('productMaster').doc(userId).get();
+        if (doc.exists) {
+            const data = doc.data();
+            productMaster  = data.products || [];
+            categories     = data.categories || categories;
+            locations      = data.locations || locations;
+            makerLearning  = data.makerLearning || {};
+        } else {
+            // 在庫管理アプリからカテゴリーを引き継ぐ
+            const invDoc = await db.collection('inventory').doc(userId).get();
+            if (invDoc.exists) {
+                const inv = invDoc.data();
+                categories = inv.categories || categories;
+                locations  = inv.locations  || locations;
+            }
+        }
+        updateSyncStatus('synced');
+    } catch (e) {
+        console.error('読み込みエラー:', e);
+        updateSyncStatus('error');
+    }
+}
+
+// ============================================================
+// データ保存
+// ============================================================
+async function saveData() {
+    try {
+        updateSyncStatus('syncing');
+        await db.collection('productMaster').doc(userId).set({
+            products:      productMaster,
+            categories:    categories,
+            locations:     locations,
+            makerLearning: makerLearning,
+            updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+        });
+        updateSyncStatus('synced');
+    } catch (e) {
+        console.error('保存エラー:', e);
+        updateSyncStatus('error');
+    }
+}
+
+// ============================================================
+// JANコード解析：4段階ルックアップ
+// ============================================================
+async function analyzeJAN(janCode) {
+    if (!janCode || janCode.length < 7) return null;
+
+    // ① 完全一致学習データ
+    if (makerLearning[janCode]) {
+        return { source: 'learned', data: makerLearning[janCode] };
+    }
+
+    // ② 企業コード辞書（先頭7桁）
+    const prefix7 = janCode.substring(0, 7);
+    if (MAKER_DICT[prefix7]) {
+        return { source: 'dict', data: MAKER_DICT[prefix7] };
+    }
+
+    // ③ Open Food Facts API
+    try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${janCode}?fields=product_name,brands,categories_tags,quantity`, { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+            const json = await res.json();
+            if (json.status === 1 && json.product) {
+                return { source: 'off', data: json.product };
+            }
+        }
+    } catch (e) { /* タイムアウト等は無視 */ }
+
+    // ④ 企業コード部分一致（先頭4〜6桁でフォールバック）
+    for (let len = 6; len >= 4; len--) {
+        const pfx = janCode.substring(0, len);
+        const hit = Object.entries(MAKER_DICT).find(([k]) => k.startsWith(pfx));
+        if (hit) return { source: 'dict_partial', data: hit[1] };
+    }
+
+    return null;
+}
+
+// ============================================================
+// JANコード検索ボタン
+// ============================================================
+async function lookupJAN() {
+    const jan = document.getElementById('formJanCode').value.trim();
+    if (!jan) { showNotification('JANコードを入力してください', 'warning'); return; }
+
+    const btn = document.getElementById('lookupBtn');
+    btn.innerHTML = '<span class="spinner"></span>検索中';
+    btn.disabled = true;
+
+    const result = await analyzeJAN(jan);
+
+    btn.innerHTML = '🔍 検索';
+    btn.disabled = false;
+
+    renderPredictionBanner(result, jan);
+}
+
+// ============================================================
+// 予測バナー描画
+// ============================================================
+function renderPredictionBanner(result, janCode) {
+    const area = document.getElementById('predictionArea');
+    if (!result) {
+        area.innerHTML = `<div style="background:#FFF3E0;border:2px solid #FF9800;border-radius:12px;padding:14px;margin-bottom:16px;">
+            <div style="font-weight:700;color:#E65100;margin-bottom:6px;">❓ 企業コード不明</div>
+            <div style="font-size:13px;color:var(--text-secondary);">
+                メーカー情報が見つかりませんでした。手動で入力してください。<br>
+                登録後、次回からは自動認識されます。
+            </div>
+        </div>`;
+        return;
+    }
+
+    if (result.source === 'learned') {
+        const d = result.data;
+        area.innerHTML = `<div class="learned-banner">
+            <div class="lb-header">
+                <div class="lb-title">🧠 学習済み商品</div>
+                <span style="font-size:11px;background:var(--warning);color:white;padding:2px 8px;border-radius:10px;">自分のデータ</span>
+            </div>
+            <div class="lb-product">${d.productName || '（商品名なし）'}</div>
+            <div class="lb-detail">
+                ${d.maker ? `メーカー: ${d.maker}　` : ''}
+                ${d.category?.large ? `カテゴリ: ${getCategoryPath(d.category)}` : ''}
+            </div>
+            <button class="btn btn-secondary" onclick="applyLearned('${janCode}')" style="margin-top:12px;padding:8px 16px;font-size:13px;">✅ この情報を適用</button>
+        </div>`;
+        return;
+    }
+
+    if (result.source === 'dict' || result.source === 'dict_partial') {
+        const d = result.data;
+        const partial = result.source === 'dict_partial';
+        area.innerHTML = `<div class="prediction-banner">
+            <div class="pb-header">
+                <div class="pb-title">🏭 メーカー予測${partial ? '（部分一致）' : ''}</div>
+                <span class="pb-source">企業コード辞書</span>
+            </div>
+            <div class="pb-maker">${d.company}</div>
+            <div class="pb-category">推定カテゴリ: ${d.large || ''}${d.medium ? ' > ' + d.medium : ''}</div>
+            <button class="pb-apply" onclick="applyDictPrediction(${JSON.stringify(d).replace(/"/g,'&quot;')})">✅ この情報を適用する</button>
+        </div>`;
+        return;
+    }
+
+    if (result.source === 'off') {
+        const d = result.data;
+        const name  = d.product_name || '';
+        const brand = d.brands || '';
+        area.innerHTML = `<div class="off-banner">
+            <div class="ob-header">
+                <div class="ob-title">🌐 Open Food Facts</div>
+                <span class="ob-source">外部DB</span>
+            </div>
+            ${name  ? `<div class="ob-product">${name}</div>` : ''}
+            ${brand ? `<div class="ob-brand">ブランド: ${brand}</div>` : ''}
+            <button class="ob-apply" onclick="applyOFFData(${JSON.stringify(d).replace(/"/g,'&quot;')})">✅ この情報を適用する</button>
+        </div>`;
+    }
+}
+
+// ── 適用関数 ──
+function applyDictPrediction(d) {
+    document.getElementById('formMaker').value = d.company || '';
+    if (d.large) {
+        updateFormCategoryOptions();
+        document.getElementById('formLargeCategory').value = d.large;
+        updateFormMediumOptions();
+        if (d.medium) document.getElementById('formMediumCategory').value = d.medium;
+    }
+    showNotification(`✅ ${d.company} の情報を適用しました`, 'success');
+}
+
+function applyOFFData(d) {
+    if (d.product_name) document.getElementById('formProductName').value = d.product_name;
+    if (d.brands)       document.getElementById('formMaker').value = d.brands.split(',')[0].trim();
+    showNotification('✅ Open Food Facts の情報を適用しました', 'info');
+}
+
+function applyLearned(janCode) {
+    const data = makerLearning[janCode];
+    if (!data) return;
+    if (data.productName) document.getElementById('formProductName').value = data.productName;
+    if (data.maker)       document.getElementById('formMaker').value = data.maker;
+    if (data.category) {
+        updateFormCategoryOptions();
+        document.getElementById('formLargeCategory').value = data.category.large || '';
+        updateFormMediumOptions();
+        document.getElementById('formMediumCategory').value = data.category.medium || '';
+        updateFormSmallOptions();
+        document.getElementById('formSmallCategory').value = data.category.small || '';
+    }
+    if (data.location) {
+        updateFormLocationOptions();
+        document.getElementById('formLocation').value = data.location;
+    }
+    showNotification('✅ 学習済み情報を適用しました', 'success');
+}
+
+// ============================================================
+// 商品保存時に学習データを更新
+// ============================================================
+function learnProduct(product) {
+    if (!product.janCode) return;
+    // 完全一致
+    makerLearning[product.janCode] = {
+        productName: product.productName,
+        maker:       product.maker || '',
+        category:    product.category,
+        location:    product.location || '',
+        basePrice:   product.basePrice || null,
+    };
+    // 企業コード（7桁）のメーカー名も更新
+    if (product.janCode.length >= 7 && product.maker) {
+        const prefix7 = product.janCode.substring(0, 7);
+        if (!MAKER_DICT[prefix7]) {
+            makerLearning['pfx_' + prefix7] = product.maker;
+        }
+    }
+}
+
+// ============================================================
+// 商品リスト表示
+// ============================================================
+function renderProductList(list = productMaster) {
+    const el = document.getElementById('productList');
+    if (list.length === 0) {
+        el.innerHTML = `<div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <div>まだ商品が登録されていません</div>
+            <div style="margin-top:10px;color:var(--text-secondary);font-size:14px;">右下の + ボタンから商品を追加しましょう</div>
+        </div>`;
+        return;
+    }
+    el.innerHTML = list.map(p => `
+        <div class="product-card" onclick="editProduct('${p.id}')">
+            <div class="product-header">
+                <div style="flex:1;">
+                    <div class="product-name">${p.productName || '商品名未設定'}</div>
+                    <div class="product-jan">JAN: ${p.janCode || '未設定'}</div>
+                    ${p.maker ? `<span class="maker-badge">🏭 ${p.maker}</span>` : ''}
+                </div>
+            </div>
+            <div class="product-info">
+                ${p.category ? `<div class="info-item">📁 ${getCategoryPath(p.category)}</div>` : ''}
+                ${p.location  ? `<div class="info-item">📍 ${p.location}</div>` : ''}
+                ${p.basePrice ? `<div class="info-item">💰 ¥${p.basePrice.toLocaleString()}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getCategoryPath(cat) {
+    if (!cat) return '未分類';
+    let p = cat.large || '';
+    if (cat.medium) p += ' > ' + cat.medium;
+    if (cat.small)  p += ' > ' + cat.small;
+    return p || '未分類';
+}
+
+// ============================================================
+// 統計
+// ============================================================
+function updateStats() {
+    document.getElementById('totalProducts').textContent  = productMaster.length;
+    document.getElementById('withJAN').textContent        = productMaster.filter(p => p.janCode).length;
+    const cats = new Set(productMaster.filter(p=>p.category?.large).map(p=>p.category.large));
+    document.getElementById('totalCategories').textContent = cats.size;
+    const learnKeys = Object.keys(makerLearning).filter(k => !k.startsWith('pfx_'));
+    document.getElementById('learnedCount').textContent   = learnKeys.length;
+}
+
+// ============================================================
+// 検索
+// ============================================================
+function setupSearch() {
+    document.getElementById('searchInput').addEventListener('input', e => {
+        const t = e.target.value.toLowerCase();
+        if (!t) { renderProductList(); return; }
+        const filtered = productMaster.filter(p =>
+            (p.janCode && p.janCode.includes(t)) ||
+            (p.productName && p.productName.toLowerCase().includes(t)) ||
+            (p.maker && p.maker.toLowerCase().includes(t)) ||
+            (p.category && getCategoryPath(p.category).toLowerCase().includes(t))
+        );
+        renderProductList(filtered);
+    });
+}
+
+// ============================================================
+// リアルタイム同期
+// ============================================================
+function setupRealtimeListener() {
+    db.collection('productMaster').doc(userId).onSnapshot(doc => {
+        if (doc.exists && !doc.metadata.hasPendingWrites) {
+            const data = doc.data();
+            if (JSON.stringify(productMaster) !== JSON.stringify(data.products || [])) {
+                productMaster  = data.products || [];
+                categories     = data.categories || categories;
+                locations      = data.locations || locations;
+                makerLearning  = data.makerLearning || {};
+                renderProductList();
+                updateStats();
+                showNotification('🔄 他のデバイスから更新されました', 'info');
+            }
+        }
+    }, e => console.error('リアルタイム同期エラー:', e));
+}
+
+// ============================================================
+// UI 制御
+// ============================================================
+function toggleFabMenu() {
+    document.getElementById('fabMenu').classList.toggle('show');
+}
+function updateSyncStatus(s) {
+    const el = document.getElementById('syncStatus');
+    const m = {
+        synced:  { i:'✅', t:'同期済み',  c:'synced' },
+        syncing: { i:'🔄', t:'同期中...',  c:'syncing' },
+        loading: { i:'⏳', t:'読込中...',  c:'syncing' },
+        error:   { i:'❌', t:'オフライン', c:'error'  }
+    };
+    const c = m[s] || m.synced;
+    el.innerHTML = `${c.i} ${c.t}`;
+    el.className = 'sync-status ' + c.c;
+}
+function showNotification(msg, type = 'success') {
+    const n = document.createElement('div');
+    n.className = 'notification ' + type;
+    n.textContent = msg;
+    document.body.appendChild(n);
+    setTimeout(() => { n.style.opacity = '0'; n.style.transition = 'opacity .3s'; setTimeout(() => n.remove(), 300); }, 3000);
+}
+document.addEventListener('click', e => {
+    const fab = document.getElementById('fabBtn');
+    const menu = document.getElementById('fabMenu');
+    if (!fab.contains(e.target) && !menu.contains(e.target)) menu.classList.remove('show');
+});
+
+// ============================================================
+// スキャン機能
+// ============================================================
+async function openNormalScan() {
+    toggleFabMenu(); scanMode = 'normal';
+    document.getElementById('scanModalTitle').textContent = '📷 バーコードスキャン';
+    document.getElementById('scanModal').classList.add('show');
+    await startScanner();
+}
+async function openBatchScan() {
+    toggleFabMenu(); scanMode = 'batch'; batchScannedItems = [];
+    document.getElementById('scanModalTitle').textContent = '⚡ 連続スキャン';
+    document.getElementById('scanModal').classList.add('show');
+    await startScanner();
+}
+async function startScanner() {
+    try {
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || devices.length === 0) { alert('カメラが見つかりません'); closeScanModal(); return; }
+        scanner = new Html5Qrcode("cameraView");
+        await scanner.start(
+            devices[devices.length - 1].id,
+            { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+            onScanSuccess, () => {}
+        );
+    } catch (err) {
+        alert('カメラの起動に失敗しました\n' + err.message);
+        closeScanModal();
+    }
+}
+function onScanSuccess(code) {
+    if (scanMode === 'normal') handleNormalScan(code);
+    else handleBatchScan(code);
+}
+async function handleNormalScan(jan) {
+    const existing = productMaster.find(p => p.janCode === jan);
+    if (existing) {
+        document.getElementById('scanInfo').style.display = 'block';
+        document.getElementById('scanInfo').innerHTML = `
+            <div style="padding:12px;background:var(--bg-main);border-radius:8px;">
+                <div style="color:var(--warning);margin-bottom:8px;font-weight:500;">⚠️ 登録済み商品</div>
+                <div style="font-weight:600;">${existing.productName}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${getCategoryPath(existing.category)}</div>
+                <button class="btn btn-secondary" onclick="closeScanModal();editProduct('${existing.id}')" style="width:100%;margin-top:10px;font-size:13px;padding:8px;">編集する</button>
+            </div>`;
+        return;
+    }
+    // 新規 → 予測してフォームを開く
+    closeScanModal();
+    await openManualRegisterWithJAN(jan);
+}
+async function openManualRegisterWithJAN(jan) {
+    openManualRegister();
+    document.getElementById('formJanCode').value = jan;
+    // 自動で予測を実行
+    const result = await analyzeJAN(jan);
+    renderPredictionBanner(result, jan);
+    // 辞書・学習データなら自動適用
+    if (result?.source === 'dict') applyDictPrediction(result.data);
+    if (result?.source === 'learned') applyLearned(jan);
+}
+function handleBatchScan(jan) {
+    const already = batchScannedItems.find(i => i.janCode === jan);
+    if (already) { already.count++; }
+    else {
+        const ex = productMaster.find(p => p.janCode === jan);
+        batchScannedItems.push({
+            janCode: jan, count: 1,
+            productName: ex?.productName || '',
+            maker:       ex?.maker || '',
+            category:    ex?.category || null,
+            location:    ex?.location || '',
+            basePrice:   ex?.basePrice || null,
+            memo:        ex?.memo || '',
+            isNew:       !ex
+        });
+    }
+    const item = batchScannedItems.find(i => i.janCode === jan);
+    document.getElementById('scanInfo').style.display = 'block';
+    document.getElementById('scanInfo').innerHTML = `
+        <div style="padding:12px;background:var(--bg-main);border-radius:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-weight:500;color:var(--success);">✅ スキャン完了</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">JAN: ${jan}</div>
+                </div>
+                <div style="font-size:24px;font-weight:700;color:var(--primary);">×${item.count}</div>
+            </div>
+            <div style="margin-top:10px;font-size:13px;color:var(--text-secondary);padding-top:10px;border-top:1px solid var(--border);">
+                合計 ${batchScannedItems.length}商品
+            </div>
+            <button class="btn btn-primary" onclick="finishBatchScan()" style="width:100%;margin-top:10px;padding:8px;font-size:13px;">
+                スキャン完了して編集
+            </button>
+        </div>`;
+}
+function finishBatchScan() {
+    if (!batchScannedItems.length) { alert('まだ商品がスキャンされていません'); return; }
+    closeScanModal();
+    openBatchEditModal();
+}
+function closeScanModal() {
+    if (scanner) {
+        scanner.stop().catch(() => {}).finally(() => { scanner = null; });
+    }
+    document.getElementById('scanModal').classList.remove('show');
+    document.getElementById('scanInfo').style.display = 'none';
+}
+
+// ============================================================
+// 連続スキャン編集
+// ============================================================
+function openBatchEditModal() {
+    document.getElementById('batchCount').textContent = batchScannedItems.length;
+    const list = document.getElementById('batchEditList');
+    list.innerHTML = batchScannedItems.map((item, i) => `
+        <div class="batch-item">
+            <div class="batch-item-header">
+                <div>
+                    <div class="batch-item-jan">JAN: ${item.janCode}</div>
+                    ${item.isNew ? '<span style="background:var(--warning);color:white;padding:2px 8px;border-radius:12px;font-size:11px;">新規</span>' : ''}
+                </div>
+                <div style="font-size:18px;font-weight:700;color:var(--primary);">×${item.count}</div>
+            </div>
+            <label class="form-label">商品名</label>
+            <input type="text" class="form-input" id="bname_${i}" value="${item.productName}" placeholder="商品名を入力">
+            <label class="form-label">メーカー</label>
+            <input type="text" class="form-input" id="bmaker_${i}" value="${item.maker || ''}" placeholder="メーカー名">
+            <label class="form-label">大カテゴリ</label>
+            <select class="form-select" id="blarge_${i}" onchange="updateBatchMediumOptions(${i})">
+                <option value="">選択してください</option>
+                ${categories.large.map(c => `<option value="${c}" ${item.category?.large===c?'selected':''}>${c}</option>`).join('')}
+            </select>
+            <label class="form-label">中カテゴリ</label>
+            <select class="form-select" id="bmedium_${i}" onchange="updateBatchSmallOptions(${i})"><option value="">選択してください</option></select>
+            <label class="form-label">小カテゴリ</label>
+            <select class="form-select" id="bsmall_${i}"><option value="">選択してください</option></select>
+            <label class="form-label">保管場所</label>
+            <select class="form-select" id="blocate_${i}">
+                <option value="">選択してください</option>
+                ${locations.map(l => `<option value="${l}" ${item.location===l?'selected':''}>${l}</option>`).join('')}
+            </select>
+            <label class="form-label">基準価格</label>
+            <input type="number" class="form-input" id="bprice_${i}" value="${item.basePrice||''}" placeholder="円">
+        </div>
+    `).join('');
+    // 中・小カテゴリ初期化
+    batchScannedItems.forEach((item, i) => {
+        if (item.category?.large) {
+            updateBatchMediumOptions(i);
+            if (item.category?.medium) {
+                document.getElementById(`bmedium_${i}`).value = item.category.medium;
+                updateBatchSmallOptions(i);
+                if (item.category?.small) document.getElementById(`bsmall_${i}`).value = item.category.small;
+            }
+        }
+    });
+    document.getElementById('batchEditModal').classList.add('show');
+}
+function updateBatchMediumOptions(i) {
+    const large = document.getElementById(`blarge_${i}`).value;
+    const med   = document.getElementById(`bmedium_${i}`);
+    const sml   = document.getElementById(`bsmall_${i}`);
+    med.innerHTML = '<option value="">選択してください</option>';
+    sml.innerHTML = '<option value="">選択してください</option>';
+    if (large && categories.medium[large]) {
+        categories.medium[large].forEach(c => med.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+}
+function updateBatchSmallOptions(i) {
+    const medium = document.getElementById(`bmedium_${i}`).value;
+    const sml    = document.getElementById(`bsmall_${i}`);
+    sml.innerHTML = '<option value="">選択してください</option>';
+    if (medium && categories.small[medium]) {
+        categories.small[medium].forEach(c => sml.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+}
+function closeBatchEditModal() {
+    if (confirm('入力内容が失われますがよろしいですか？')) {
+        document.getElementById('batchEditModal').classList.remove('show');
+        batchScannedItems = [];
+    }
+}
+async function saveBatchProducts() {
+    let saved = 0;
+    for (let i = 0; i < batchScannedItems.length; i++) {
+        const item = batchScannedItems[i];
+        const productName = document.getElementById(`bname_${i}`).value.trim();
+        const maker    = document.getElementById(`bmaker_${i}`).value.trim();
+        const large    = document.getElementById(`blarge_${i}`).value;
+        const medium   = document.getElementById(`bmedium_${i}`).value;
+        const small    = document.getElementById(`bsmall_${i}`).value;
+        const location = document.getElementById(`blocate_${i}`).value;
+        const basePrice= document.getElementById(`bprice_${i}`).value;
+        if (!productName) { alert(`${i+1}番目: 商品名を入力してください`); return; }
+        if (!large)       { alert(`${i+1}番目: 大カテゴリを選択してください`); return; }
+        const product = {
+            id: 'PROD_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),
+            janCode: item.janCode, productName, maker,
+            category: { large, medium, small }, location,
+            basePrice: basePrice ? parseFloat(basePrice) : null,
+            memo: '',
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+        };
+        const exIdx = productMaster.findIndex(p => p.janCode === item.janCode);
+        if (exIdx !== -1) { productMaster[exIdx] = { ...productMaster[exIdx], ...product, id: productMaster[exIdx].id }; }
+        else              { productMaster.push(product); }
+        learnProduct(product);
+        saved++;
+    }
+    await saveData();
+    renderProductList();
+    updateStats();
+    document.getElementById('batchEditModal').classList.remove('show');
+    batchScannedItems = [];
+    showNotification(`✅ ${saved}商品を保存しました`, 'success');
+}
+
+// ============================================================
+// 手動登録・編集
+// ============================================================
+function openManualRegister() {
+    toggleFabMenu();
+    currentEditingProductId = null;
+    document.getElementById('formModalTitle').textContent = '✍️ 商品登録';
+    document.getElementById('formModalHeader').style.background = 'linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)';
+    document.getElementById('deleteButtonContainer').style.display = 'none';
+    document.getElementById('predictionArea').innerHTML = '';
+    document.getElementById('productForm').reset();
+    updateFormCategoryOptions();
+    updateFormLocationOptions();
+    document.getElementById('productFormModal').classList.add('show');
+}
+function editProduct(productId) {
+    const p = productMaster.find(x => x.id === productId);
+    if (!p) return;
+    currentEditingProductId = productId;
+    document.getElementById('formModalTitle').textContent = '✏️ 商品編集';
+    document.getElementById('formModalHeader').style.background = 'linear-gradient(135deg,#FF9F4A 0%,#FF8A1F 100%)';
+    document.getElementById('deleteButtonContainer').style.display = 'block';
+    document.getElementById('predictionArea').innerHTML = '';
+    document.getElementById('formJanCode').value     = p.janCode || '';
+    document.getElementById('formProductName').value = p.productName || '';
+    document.getElementById('formMaker').value       = p.maker || '';
+    document.getElementById('formBasePrice').value   = p.basePrice || '';
+    document.getElementById('formMemo').value        = p.memo || '';
+    updateFormCategoryOptions();
+    updateFormLocationOptions();
+    if (p.category) {
+        document.getElementById('formLargeCategory').value = p.category.large || '';
+        updateFormMediumOptions();
+        document.getElementById('formMediumCategory').value = p.category.medium || '';
+        updateFormSmallOptions();
+        document.getElementById('formSmallCategory').value = p.category.small || '';
+    }
+    if (p.location) document.getElementById('formLocation').value = p.location;
+    document.getElementById('productFormModal').classList.add('show');
+}
+function updateFormCategoryOptions() {
+    const sel = document.getElementById('formLargeCategory');
+    sel.innerHTML = '<option value="">選択してください</option>';
+    categories.large.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+}
+function updateFormMediumOptions() {
+    const large = document.getElementById('formLargeCategory').value;
+    const med = document.getElementById('formMediumCategory');
+    const sml = document.getElementById('formSmallCategory');
+    med.innerHTML = '<option value="">選択してください</option>';
+    sml.innerHTML = '<option value="">選択してください</option>';
+    if (large && categories.medium[large]) {
+        categories.medium[large].forEach(c => med.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+}
+function updateFormSmallOptions() {
+    const medium = document.getElementById('formMediumCategory').value;
+    const sml = document.getElementById('formSmallCategory');
+    sml.innerHTML = '<option value="">選択してください</option>';
+    if (medium && categories.small[medium]) {
+        categories.small[medium].forEach(c => sml.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+}
+function updateFormLocationOptions() {
+    const sel = document.getElementById('formLocation');
+    sel.innerHTML = '<option value="">選択してください</option>';
+    locations.forEach(l => sel.innerHTML += `<option value="${l}">${l}</option>`);
+}
+function closeProductFormModal() {
+    document.getElementById('productFormModal').classList.remove('show');
+    currentEditingProductId = null;
+}
+
+// フォーム送信
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('productForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const janCode     = document.getElementById('formJanCode').value.trim();
+        const productName = document.getElementById('formProductName').value.trim();
+        const maker       = document.getElementById('formMaker').value.trim();
+        const large       = document.getElementById('formLargeCategory').value;
+        const medium      = document.getElementById('formMediumCategory').value;
+        const small       = document.getElementById('formSmallCategory').value;
+        const location    = document.getElementById('formLocation').value;
+        const basePrice   = document.getElementById('formBasePrice').value;
+        const memo        = document.getElementById('formMemo').value.trim();
+        if (!productName) { alert('商品名を入力してください'); return; }
+        if (!large)       { alert('大カテゴリを選択してください'); return; }
+        if (janCode) {
+            const dup = productMaster.find(p => p.janCode === janCode && p.id !== currentEditingProductId);
+            if (dup) { alert('このJANコードは既に登録されています\n商品名: ' + dup.productName); return; }
+        }
+        const product = {
+            janCode: janCode || null, productName, maker,
+            category: { large, medium, small }, location,
+            basePrice: basePrice ? parseFloat(basePrice) : null,
+            memo, updatedAt: new Date().toISOString()
+        };
+        if (currentEditingProductId) {
+            const idx = productMaster.findIndex(p => p.id === currentEditingProductId);
+            if (idx !== -1) productMaster[idx] = { ...productMaster[idx], ...product };
+        } else {
+            productMaster.push({ id: 'PROD_'+Date.now()+'_'+Math.random().toString(36).substr(2,9), ...product, createdAt: new Date().toISOString() });
+        }
+        learnProduct(product);
+        await saveData();
+        renderProductList();
+        updateStats();
+        closeProductFormModal();
+        showNotification(currentEditingProductId ? '✅ 商品を更新しました' : '✅ 商品を登録しました', 'success');
+    });
+});
+async function deleteProduct() {
+    if (!currentEditingProductId) return;
+    const p = productMaster.find(x => x.id === currentEditingProductId);
+    if (!p) return;
+    if (!confirm(`「${p.productName}」を削除しますか？`)) return;
+    productMaster = productMaster.filter(x => x.id !== currentEditingProductId);
+    await saveData();
+    renderProductList();
+    updateStats();
+    closeProductFormModal();
+    showNotification('🗑️ 商品を削除しました', 'info');
+}
+
+// ============================================================
+// 設定
+// ============================================================
+function openSettings() {
+    toggleFabMenu();
+    document.getElementById('userIdDisplay').textContent = userId;
+    // 学習統計
+    const keys = Object.keys(makerLearning).filter(k => !k.startsWith('pfx_'));
+    const pfxKeys = Object.keys(makerLearning).filter(k => k.startsWith('pfx_'));
+    document.getElementById('learnStatsRow').innerHTML = `
+        <div class="learn-stat-chip">完全一致: <strong>${keys.length}</strong>件</div>
+        <div class="learn-stat-chip">学習企業コード: <strong>${pfxKeys.length}</strong>件</div>
+        <div class="learn-stat-chip">辞書収録: <strong>${Object.keys(MAKER_DICT).length}</strong>社</div>
+    `;
+    document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('show'); }
+
+// ============================================================
+// 学習済みコード閲覧
+// ============================================================
+function openMakerLearningView() {
+    closeSettingsModal();
+    const list = document.getElementById('makerLearningList');
+    const keys = Object.keys(makerLearning).filter(k => !k.startsWith('pfx_')).sort();
+    if (!keys.length) {
+        list.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:30px;">まだ学習データがありません</div>';
+    } else {
+        list.innerHTML = keys.map(k => {
+            const d = makerLearning[k];
+            return `<div style="background:var(--bg-main);padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-size:12px;color:var(--text-secondary);">JAN: ${k}</div>
+                    <div style="font-weight:600;">${d.productName || '商品名なし'}</div>
+                    ${d.maker ? `<div style="font-size:12px;color:var(--primary);">🏭 ${d.maker}</div>` : ''}
+                </div>
+                <button onclick="deleteLearned('${k}')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--danger);">🗑️</button>
+            </div>`;
+        }).join('');
+    }
+    document.getElementById('makerLearningModal').classList.add('show');
+}
+function closeMakerLearningView() { document.getElementById('makerLearningModal').classList.remove('show'); }
+async function deleteLearned(key) {
+    if (!confirm(`「${makerLearning[key]?.productName || key}」の学習データを削除しますか？`)) return;
+    delete makerLearning[key];
+    await saveData();
+    updateStats();
+    openMakerLearningView();
+    showNotification('学習データを削除しました', 'info');
+}
+async function clearAllLearning() {
+    if (!confirm('すべての学習データを削除しますか？')) return;
+    makerLearning = {};
+    await saveData();
+    updateStats();
+    closeSettingsModal();
+    showNotification('🗑️ 学習データをリセットしました', 'info');
+}
+
+// ============================================================
+// カテゴリー管理
+// ============================================================
+function openCategoryManager() {
+    closeSettingsModal();
+    renderCategoryManager();
+    document.getElementById('categoryManagerModal').classList.add('show');
+}
+function closeCategoryManager() { document.getElementById('categoryManagerModal').classList.remove('show'); }
+function renderCategoryManager() {
+    const list = document.getElementById('categoryManagerList');
+    list.innerHTML = categories.large.map(large => {
+        const id = 'lcat_' + large.replace(/\s/g,'_');
+        const mCnt = (categories.medium[large] || []).length;
+        return `
+        <div style="background:var(--bg-main);padding:15px;border-radius:8px;margin-bottom:15px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="flex:1;cursor:pointer;" onclick="toggleCategorySection('${id}')">
+                    <span id="${id}_icon">▶</span> <strong>${large}</strong>
+                    <span style="color:var(--text-secondary);font-size:13px;">(${mCnt})</span>
+                </div>
+                <div style="display:flex;gap:5px;">
+                    <button class="btn btn-secondary" onclick="event.stopPropagation();editLargeCategory('${large}')" style="padding:6px 10px;font-size:13px;">✏️</button>
+                    <button onclick="event.stopPropagation();deleteLargeCategory('${large}')" style="padding:6px 10px;font-size:13px;background:var(--danger);color:white;border:none;border-radius:25px;cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+            <div id="${id}" style="display:none;margin-top:15px;padding-left:20px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;">
+                    <input type="text" class="form-input" id="newMed_${large}" placeholder="中カテゴリーを追加" style="flex:1;">
+                    <button class="btn btn-primary" onclick="addMediumCategory('${large}')" style="padding:8px 16px;font-size:13px;">追加</button>
+                </div>
+                ${(categories.medium[large]||[]).length > 0
+                    ? (categories.medium[large]||[]).map(med => `
+                        <div style="background:white;padding:10px;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                            <strong style="font-size:14px;">${med}</strong>
+                            <div style="display:flex;gap:5px;">
+                                <button class="btn btn-secondary" onclick="editMediumCategory('${large}','${med}')" style="padding:4px 8px;font-size:12px;">✏️</button>
+                                <button onclick="deleteMediumCategory('${large}','${med}')" style="padding:4px 8px;font-size:12px;background:var(--danger);color:white;border:none;border-radius:25px;cursor:pointer;">🗑️</button>
+                            </div>
+                        </div>`).join('')
+                    : '<div style="color:var(--text-secondary);font-size:13px;">中カテゴリーがありません</div>'
+                }
+            </div>
+        </div>`;
+    }).join('');
+}
+function toggleCategorySection(id) {
+    const el   = document.getElementById(id);
+    const icon = document.getElementById(id + '_icon');
+    const open = el.style.display === 'block';
+    el.style.display   = open ? 'none' : 'block';
+    icon.textContent   = open ? '▶' : '▼';
+}
+function addLargeCategory() {
+    const n = document.getElementById('newLargeCategory').value.trim();
+    if (!n) { alert('カテゴリー名を入力してください'); return; }
+    if (categories.large.includes(n)) { alert('このカテゴリーは既に存在します'); return; }
+    categories.large.push(n); categories.medium[n] = [];
+    saveData(); renderCategoryManager();
+    document.getElementById('newLargeCategory').value = '';
+    showNotification('✅ 大カテゴリーを追加しました', 'success');
+}
+function addMediumCategory(large) {
+    const n = document.getElementById(`newMed_${large}`).value.trim();
+    if (!n) { alert('カテゴリー名を入力してください'); return; }
+    if (!categories.medium[large]) categories.medium[large] = [];
+    if (categories.medium[large].includes(n)) { alert('このカテゴリーは既に存在します'); return; }
+    categories.medium[large].push(n); categories.small[n] = [];
+    saveData(); renderCategoryManager();
+    showNotification('✅ 中カテゴリーを追加しました', 'success');
+}
+function editLargeCategory(old) {
+    const n = prompt('新しいカテゴリー名', old); if (!n || n === old) return;
+    if (categories.large.includes(n)) { alert('このカテゴリー名は既に存在します'); return; }
+    productMaster.forEach(p => { if (p.category?.large === old) p.category.large = n; });
+    categories.large[categories.large.indexOf(old)] = n;
+    if (categories.medium[old]) { categories.medium[n] = categories.medium[old]; delete categories.medium[old]; }
+    saveData(); renderCategoryManager(); renderProductList();
+    showNotification('✅ カテゴリー名を変更しました', 'success');
+}
+function editMediumCategory(large, old) {
+    const n = prompt('新しいカテゴリー名', old); if (!n || n === old) return;
+    productMaster.forEach(p => { if (p.category?.medium === old) p.category.medium = n; });
+    const idx = (categories.medium[large]||[]).indexOf(old);
+    if (idx !== -1) categories.medium[large][idx] = n;
+    if (categories.small[old]) { categories.small[n] = categories.small[old]; delete categories.small[old]; }
+    saveData(); renderCategoryManager(); renderProductList();
+    showNotification('✅ カテゴリー名を変更しました', 'success');
+}
+function deleteLargeCategory(large) {
+    if (productMaster.some(p => p.category?.large === large)) { alert('このカテゴリーを使用している商品があります'); return; }
+    if (!confirm(`「${large}」を削除しますか？`)) return;
+    (categories.medium[large]||[]).forEach(m => delete categories.small[m]);
+    delete categories.medium[large];
+    categories.large = categories.large.filter(c => c !== large);
+    saveData(); renderCategoryManager();
+    showNotification('✅ 大カテゴリーを削除しました', 'success');
+}
+function deleteMediumCategory(large, medium) {
+    if (productMaster.some(p => p.category?.medium === medium)) { alert('このカテゴリーを使用している商品があります'); return; }
+    if (!confirm(`「${medium}」を削除しますか？`)) return;
+    delete categories.small[medium];
+    categories.medium[large] = (categories.medium[large]||[]).filter(c => c !== medium);
+    saveData(); renderCategoryManager();
+    showNotification('✅ 中カテゴリーを削除しました', 'success');
+}
+
+// ============================================================
+// CSV エクスポート / インポート
+// ============================================================
+function exportProductMasterCSV() {
+    if (!productMaster.length) { alert('商品が登録されていません'); return; }
+    let csv = 'JANコード,商品名,メーカー,大カテゴリ,中カテゴリ,小カテゴリ,保管場所,基準価格,メモ\n';
+    productMaster.forEach(p => {
+        csv += [p.janCode||'',p.productName||'',p.maker||'',p.category?.large||'',p.category?.medium||'',p.category?.small||'',p.location||'',p.basePrice||'',p.memo||'']
+            .map(v => `"${String(v).replace(/"/g,'""')}"`)
+            .join(',') + '\n';
+    });
+    const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: `商品マスター_${new Date().toISOString().split('T')[0]}.csv` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('✅ CSVをダウンロードしました', 'success');
+}
+function importProductMasterCSV() {
+    const input = document.getElementById('csvFileInput');
+    input.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async ev => {
+            try {
+                const lines = ev.target.result.split('\n').filter(l => l.trim()).slice(1);
+                if (!lines.length) { alert('CSVファイルが空です'); return; }
+                if (!confirm(`${lines.length}件を読み込みます。既存商品は上書きされます。`)) return;
+                let imp = 0, upd = 0;
+                lines.forEach(line => {
+                    const c = parseCSVLine(line);
+                    if (c.length < 2) return;
+                    const [jan,name,maker,large,medium,small,location,price,memo] = c.map(v=>v.trim());
+                    if (!name || !large) return;
+                    const product = { janCode:jan||null, productName:name, maker:maker||'', category:{large,medium:medium||'',small:small||''}, location:location||'', basePrice:price?parseFloat(price):null, memo:memo||'', updatedAt:new Date().toISOString() };
+                    const idx = jan ? productMaster.findIndex(p=>p.janCode===jan) : -1;
+                    if (idx !== -1) { productMaster[idx] = {...productMaster[idx],...product}; upd++; }
+                    else { productMaster.push({id:'PROD_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),...product,createdAt:new Date().toISOString()}); imp++; }
+                    learnProduct(product);
+                });
+                await saveData(); renderProductList(); updateStats(); closeSettingsModal();
+                showNotification(`✅ 新規${imp}件、更新${upd}件を読み込みました`, 'success');
+            } catch(err) { alert('CSVの読み込みに失敗しました: '+err.message); }
+        };
+        reader.readAsText(file, 'UTF-8');
+        e.target.value = '';
+    };
+    input.click();
+}
+function parseCSVLine(line) {
+    const result = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch==='"') { inQ && line[i+1]==='"' ? (cur+='"',i++) : (inQ=!inQ); }
+        else if (ch===',' && !inQ) { result.push(cur); cur=''; }
+        else cur += ch;
+    }
+    result.push(cur);
+    return result.map(v => v.replace(/^"|"$/g,''));
+}
+async function clearAllProducts() {
+    if (!confirm('本当にすべての商品を削除しますか？')) return;
+    if (!confirm('最終確認: 全商品データが完全に削除されます。')) return;
+    productMaster = [];
+    await saveData(); renderProductList(); updateStats(); closeSettingsModal();
+    showNotification('🗑️ すべての商品を削除しました', 'info');
+}
+</script>
 </body>
 </html>
-```
-
-5. 下にスクロールして **Commit changes** をクリック
-6. 5分待つ
-
----
-
-## ✅ 完成後のURL
-
-### これだけでアプリが開く
-```
-https://momo060331.github.io/product-master-app/
-```
-↑ **短くて覚えやすい！**
-
----
-
-## 📱 インストール用のURL
-
-### スマホにインストールする時も簡単
-```
-https://momo060331.github.io/product-master-app/
-```
-
-このURLをホーム画面に追加すればOK！
-
----
-
-## 🎉 これで完璧です
-
-### Before（今）
-```
-https://github.com/momo060331/product-master-app
-↑ GitHubの説明ページ（README）が表示される
-```
-
-### After（index.html作成後）
-```
-https://momo060331.github.io/product-master-app/
-↑ 自動でアプリが起動！
