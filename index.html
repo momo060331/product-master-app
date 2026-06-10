@@ -51,10 +51,10 @@
         .sync-status.error   { background: rgba(231,76,60,.3); }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .stats-card { background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 15px; }
-        .stat-item { text-align: center; padding: 15px; background: var(--bg-main); border-radius: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-item { text-align: center; padding: 12px 8px; background: var(--bg-main); border-radius: 8px; min-width: 0; }
         .stat-number { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 5px; }
-        .stat-label  { font-size: 13px; color: var(--text-secondary); }
+        .stat-label  { font-size: 11px; color: var(--text-secondary); }
         .search-box { background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
         .search-input {
             width: 100%; padding: 12px 20px; border: 2px solid var(--border);
@@ -221,7 +221,6 @@
         @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp   { from { opacity: 0; transform: translateY(30px);  } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
 
         /* 学習統計 */
         .learn-stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
